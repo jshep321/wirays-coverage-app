@@ -202,7 +202,7 @@
     position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); right: 20px;
     width: 50px; height: 50px; border-radius: 50%;
     background: rgba(34,102,204,0.90); backdrop-filter: blur(8px);
-    border: none; color: #fff; font-size: 24px; line-height: 1; cursor: pointer;
+    border: none; color: #fff; cursor: pointer;
     box-shadow: 0 3px 18px rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center;
     z-index: 60; transition: background 0.15s, transform 0.15s;
   }
@@ -322,7 +322,13 @@
 <div id="dragHandle"></div>
 
 <div id="settingsBackdrop"></div>
-<button id="settingsBtn" title="Settings">&#9881;</button>
+<button id="settingsBtn" title="Settings">
+  <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="20" height="2.5" rx="1.25"/>
+    <rect x="0" y="6.75" width="20" height="2.5" rx="1.25"/>
+    <rect x="0" y="13.5" width="20" height="2.5" rx="1.25"/>
+  </svg>
+</button>
 <div id="settingsSheet">
   <div id="sheetHandle">
     <span class="sh-title">Settings</span>
