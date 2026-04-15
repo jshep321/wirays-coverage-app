@@ -10,8 +10,6 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #d8dce6; overflow: hidden; font-family: 'Segoe UI', sans-serif;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
   }
   canvas { display: block; }
 
@@ -53,26 +51,28 @@
   #applyBtn:active { background: #154a9a; }
 
   #dimLabel {
-    position: fixed; bottom: 20px; transform: translateX(-50%);
+    position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); transform: translateX(-50%);
     background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
-    padding: 8px 18px; border-radius: 10px; font-size: 12px; color: #445;
+    padding: 6px 14px; border-radius: 10px; font-size: 11px; color: #445;
     pointer-events: none; z-index: 10;
   }
   #topBar {
-    position: fixed; top: 0; left: 0; right: 0; height: 44px;
+    position: fixed; top: 0; left: 0; right: 0;
+    height: calc(44px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
     background: rgba(255,255,255,0.90); backdrop-filter: blur(10px);
     border-bottom: 1px solid #ccd;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 16px; z-index: 50;
+    padding-left: 10px; padding-right: 10px; z-index: 50;
   }
-  #topBar .tb-left { font-size: 11px; color: #aab; min-width: 120px; }
-  #topBar .tb-center { flex: 1; text-align: center; }
+  #topBar .tb-left { display: flex; align-items: center; }
+  #topBar .tb-center { flex: 1; text-align: center; padding: 0 8px; }
   #topBar .cov-info {
-    font-size: 15px; color: #334; font-weight: 600; letter-spacing: 0.2px;
+    font-size: 13px; color: #334; font-weight: 600; letter-spacing: 0.2px;
   }
   #topBar .cov-info strong { color: #223; }
   #topBar .cov-info .lbl { font-weight: 400; color: #667; }
-  #topBar .tb-right { min-width: 120px; display: flex; justify-content: flex-end; position: relative; }
+  #topBar .tb-right { display: flex; justify-content: flex-end; position: relative; }
 
   #exportBtn {
     padding: 6px 14px; border: 1px solid #bbc; border-radius: 7px;
@@ -186,20 +186,97 @@
     transition: background 0.15s;
   }
   #dragHandle:hover, #dragHandle.dragging { background: #2266cc; }
-  #panel {
-    position: fixed; top: 88px; left: 16px;
-    background: rgba(255,255,255,0.82); backdrop-filter: blur(10px);
-    border-radius: 12px; padding: 16px 20px; width: 240px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-    overflow-y: auto; max-height: calc(100vh - 104px); z-index: 30;
+
+  /* View mode pill selector */
+  .view-pill { display: flex; align-items: center; background: #e4e7ef; border-radius: 8px; padding: 2px; gap: 1px; }
+  .pill-btn {
+    padding: 5px 9px; border: none; border-radius: 6px;
+    font-size: 11px; font-weight: 600; color: #667;
+    background: transparent; cursor: pointer;
+    transition: background 0.12s, color 0.12s; white-space: nowrap; letter-spacing: 0.2px;
   }
+  .pill-btn.active { background: #fff; color: #2266cc; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+  /* Floating settings button */
+  #settingsBtn {
+    position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); right: 20px;
+    width: 50px; height: 50px; border-radius: 50%;
+    background: rgba(34,102,204,0.90); backdrop-filter: blur(8px);
+    border: none; color: #fff; cursor: pointer;
+    box-shadow: 0 3px 18px rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center;
+    z-index: 60; transition: background 0.15s, transform 0.15s;
+  }
+  #settingsBtn:active { background: rgba(26,85,176,0.97); transform: scale(0.93); }
+
+  /* Settings bottom sheet */
+  #settingsBackdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.32); z-index: 80;
+  }
+  #settingsBackdrop.open { display: block; }
+  #settingsSheet {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-height: 74vh;
+    background: rgba(248,249,252,0.99); backdrop-filter: blur(14px);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -4px 28px rgba(0,0,0,0.18);
+    z-index: 90;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.34,1.06,0.64,1);
+    overflow: hidden;
+  }
+  #settingsSheet.open { transform: translateY(0); }
+  #sheetHandle { width: 38px; height: 4px; border-radius: 2px; background: #ccd; margin: 10px auto 0; }
+  #settingsSheetInner {
+    padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+    overflow-y: auto; max-height: calc(74vh - 28px);
+  }
+  #settingsSheetInner h3 {
+    font-size: 13px; color: #445; margin: 0 0 10px 0;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    cursor: pointer; display: flex; justify-content: space-between;
+    align-items: center; user-select: none;
+  }
+  #settingsSheetInner .arr { font-size: 10px; color: #889; transition: transform 0.15s; flex-shrink: 0; }
+  #settingsSheetInner .field { margin-bottom: 10px; }
+  #settingsSheetInner .field label { display: block; font-size: 11px; color: #667; margin-bottom: 3px; }
+  #settingsSheetInner .field .row { display: flex; gap: 6px; align-items: center; }
+  #settingsSheetInner .field input[type=number] {
+    width: 70px; padding: 5px 8px; border: 1px solid #ccd;
+    border-radius: 6px; font-size: 13px; background: #f8f9fc; text-align: center;
+  }
+  #settingsSheetInner .field input[type=number]:focus { outline: none; border-color: #2266cc; }
+  #settingsSheetInner .field .unit { font-size: 11px; color: #889; }
+  #settingsSheetInner .sep { border: none; border-top: 1px solid #dde; margin: 12px 0; }
+  #settingsSheetInner .slider-field { margin-bottom: 10px; }
+  #settingsSheetInner .slider-field label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #667; margin-bottom: 3px;
+  }
+  #settingsSheetInner .slider-field label span { color: #334; font-weight: 600; }
+  #settingsSheetInner .slider-field input[type=range] { width: 100%; accent-color: #2266cc; }
+  #settingsSheetInner #applyBtn {
+    width: 100%; padding: 8px; border: none; border-radius: 8px;
+    background: #2266cc; color: #fff; font-size: 13px; cursor: pointer;
+    font-weight: 600; margin-top: 4px;
+  }
+  #settingsSheetInner #applyBtn:active { background: #154a9a; }
+
+  /* Stacked split: 2D pane sits directly below 3D */
+  #splitPane.stacked { border-left: none; border-top: 1px solid #c4c8d4; }
 </style>
 </head>
 <body>
 
 <!-- Top coverage bar (spans full width above 3D+2D) -->
 <div id="topBar">
-  <div class="tb-left">&copy; 2026 Lumeova</div>
+  <div class="tb-left">
+    <div class="view-pill" id="viewPill">
+      <button class="pill-btn active" data-view="3d">3D</button>
+      <button class="pill-btn" data-view="split">3D|2D</button>
+      <button class="pill-btn" data-view="2d">2D</button>
+    </div>
+  </div>
   <div class="tb-center">
     <div class="cov-info">
       <span class="lbl" id="coverageLabel">Coverage</span>:&nbsp;&nbsp;<strong><span id="covM2">—</span> m²</strong>&nbsp;&nbsp;(<span id="covPct">—</span>%)
@@ -231,7 +308,13 @@
 <!-- Draggable split divider -->
 <div id="dragHandle"></div>
 
-<div id="panel">
+<div id="settingsBackdrop"></div>
+<button id="settingsBtn" title="Settings">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+</button>
+<div id="settingsSheet">
+  <div id="sheetHandle"></div>
+  <div id="settingsSheetInner">
   <div style="text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #dde;">
     <img id="panelLogoImg" style="width:180px;height:auto;display:block;margin:0 auto;" alt="Lumeova">
   </div>
@@ -335,8 +418,7 @@
       <input type="checkbox" id="axesToggle" style="cursor:pointer;" checked>
       <label for="axesToggle" style="font-size:11px;color:#667;cursor:pointer;user-select:none;">Enable Axes Highlight</label>
     </div>
-    <hr class="sep">
-    <button id="coverageBtn" style="width:100%;padding:7px;border:none;border-radius:8px;background:#3a4a5c;color:#fff;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:2px;">Hide 2D Coverage</button>
+  </div>
   </div>
 </div>
 
@@ -424,7 +506,8 @@ window.toggleSection = function(id, hdr) {
   var planeIntensityMats = [];
   var coverageM2 = 0;
   var coveragePct = 0;
-  var splitMode = false; // toggled to true after init
+  var viewMode = '3d'; // '3d' | 'split' | '2d'
+  var splitMode = false; // true when viewMode === 'split'
   var measurePoint = null; // { wx, wz } in world coords, or null
   var canvas2DLayouts = {}; // keyed by canvas id → { offX, offZ, scale }
 
@@ -473,18 +556,28 @@ window.toggleSection = function(id, hdr) {
   var scene = new THREE.Scene();
   scene.background = new THREE.Color(0xd8dce6);
 
-  // Panel is 240px wide at left:16px → 3D canvas starts at 272px
-  var PANEL_W = 272;
-  var TOP_BAR_H = 44;
+  var PANEL_W = 0; // panel is now a bottom sheet
+  // TOP_BAR_H computed dynamically from DOM to account for safe-area-inset-top
+  function getTopBarH() {
+    return document.getElementById('topBar').offsetHeight || 44;
+  }
+  var TOP_BAR_H = 44; // will be updated after first layout
   var SUB_HDR_H = 36;
   var splitX = Math.floor(innerWidth / 2);
   var splitRatio = 0.5;
 
+  function isPortrait() { return innerHeight > innerWidth; }
+
   function get3DWidth() {
-    return (splitMode ? splitX : innerWidth) - PANEL_W;
+    if (viewMode === '2d') return 1;
+    if (viewMode === 'split' && !isPortrait()) return splitX;
+    return innerWidth;
   }
   function get3DHeight() {
-    return innerHeight - TOP_BAR_H - SUB_HDR_H;
+    if (viewMode === '2d') return 1;
+    var avail = innerHeight - TOP_BAR_H - SUB_HDR_H;
+    if (viewMode === 'split' && isPortrait()) return Math.floor(avail / 2);
+    return avail;
   }
 
   var camera = new THREE.PerspectiveCamera(55, get3DWidth() / get3DHeight(), 0.1, 200);
@@ -498,7 +591,7 @@ window.toggleSection = function(id, hdr) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.position = 'fixed';
   renderer.domElement.style.top = (TOP_BAR_H + SUB_HDR_H) + 'px';
-  renderer.domElement.style.left = PANEL_W + 'px';
+  renderer.domElement.style.left = '0';
   document.body.appendChild(renderer.domElement);
 
   var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -546,7 +639,8 @@ window.toggleSection = function(id, hdr) {
   var dimLabel = document.getElementById('dimLabel');
   function updateDimLabel() {
     dimLabel.textContent = 'X: ' + roomW + ' m \u00d7 Y: ' + roomD + ' m \u00d7 Z: ' + roomH + ' m';
-    dimLabel.style.left = (PANEL_W + get3DWidth() / 2) + 'px';
+    dimLabel.style.left = (get3DWidth() / 2) + 'px';
+    dimLabel.style.display = viewMode === '2d' ? 'none' : '';
   }
 
   // ===============================
@@ -1154,7 +1248,7 @@ window.toggleSection = function(id, hdr) {
     if (lblEl) lblEl.textContent = usePlaneZ
       ? "Plane of Interest (Z' = " + planeZ.toFixed(1) + ' m) Coverage'
       : 'Floor Coverage';
-    if (splitMode) {
+    if (splitMode || viewMode === '2d') {
       render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
     }
     if (measurePoint) { updateMeasureViz(); }
@@ -1448,7 +1542,7 @@ window.toggleSection = function(id, hdr) {
 
   // ---- Init ----
   rebuildScene();
-  setSplitMode(true);
+  setViewMode('split'); // default: split view on load
 
   // ---- UI ----
   var roomXInput = document.getElementById('roomX');
@@ -1563,9 +1657,27 @@ window.toggleSection = function(id, hdr) {
     computeCoverage();
   });
 
-  document.getElementById('coverageBtn').addEventListener('click', function() {
-    setSplitMode(!splitMode);
+  // View mode pill
+  document.querySelectorAll('.pill-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setViewMode(this.dataset.view);
+    });
   });
+
+  // Settings sheet open/close
+  document.getElementById('settingsBtn').addEventListener('click', function() {
+    document.getElementById('settingsSheet').classList.add('open');
+    document.getElementById('settingsBackdrop').classList.add('open');
+  });
+  document.getElementById('settingsBackdrop').addEventListener('click', function() {
+    document.getElementById('settingsSheet').classList.remove('open');
+    document.getElementById('settingsBackdrop').classList.remove('open');
+  });
+  document.getElementById('sheetHandle').addEventListener('click', function() {
+    document.getElementById('settingsSheet').classList.remove('open');
+    document.getElementById('settingsBackdrop').classList.remove('open');
+  });
+
   document.getElementById('expandCoverage').addEventListener('click', function() {
     var modal = document.getElementById('modal2D');
     modal.style.display = 'flex';
@@ -1583,51 +1695,108 @@ window.toggleSection = function(id, hdr) {
     var hdr = document.getElementById('splitPaneHeader');
     var hdrH = hdr ? hdr.offsetHeight : 36;
     var c = document.getElementById('canvas2DSplit');
-    var w = innerWidth - splitX;
-    var h = innerHeight - TOP_BAR_H - hdrH;
+    var w, h;
+    if (viewMode === '2d') {
+      w = innerWidth;
+      h = innerHeight - TOP_BAR_H - hdrH;
+    } else if (viewMode === 'split' && isPortrait()) {
+      w = innerWidth;
+      h = innerHeight - TOP_BAR_H - SUB_HDR_H - get3DHeight() - hdrH;
+    } else {
+      // landscape split
+      w = innerWidth - splitX;
+      h = innerHeight - TOP_BAR_H - hdrH;
+    }
     c.width = Math.max(w, 1); c.height = Math.max(h, 1);
   }
 
   function updateLayout() {
+    TOP_BAR_H = getTopBarH();
     var w3d = get3DWidth();
     var h3d = get3DHeight();
-    camera.aspect = w3d / h3d;
+    camera.aspect = w3d / Math.max(h3d, 1);
     camera.updateProjectionMatrix();
-    renderer.setSize(w3d, h3d);
+    renderer.setSize(Math.max(w3d, 1), Math.max(h3d, 1));
 
     var hdr3d = document.getElementById('header3D');
-    hdr3d.style.left = PANEL_W + 'px';
-    hdr3d.style.width = w3d + 'px';
-
     var handle = document.getElementById('dragHandle');
     var pane = document.getElementById('splitPane');
-    if (splitMode) {
+
+    if (viewMode === '2d') {
+      // 3D hidden, 2D full screen
+      renderer.domElement.style.display = 'none';
+      hdr3d.style.display = 'none';
+      handle.style.display = 'none';
+      pane.style.display = 'block';
+      pane.classList.remove('stacked');
+      pane.style.top = TOP_BAR_H + 'px';
+      pane.style.left = '0';
+      pane.style.width = innerWidth + 'px';
+      pane.style.height = (innerHeight - TOP_BAR_H) + 'px';
+    } else if (viewMode === 'split' && isPortrait()) {
+      // Stacked: 3D top, 2D bottom
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.top = (TOP_BAR_H + SUB_HDR_H) + 'px';
+      hdr3d.style.display = 'flex';
+      hdr3d.style.top = TOP_BAR_H + 'px';
+      hdr3d.style.left = '0';
+      hdr3d.style.width = innerWidth + 'px';
+      handle.style.display = 'none';
+      pane.style.display = 'block';
+      pane.classList.add('stacked');
+      pane.style.top = (TOP_BAR_H + SUB_HDR_H + h3d) + 'px';
+      pane.style.left = '0';
+      pane.style.width = innerWidth + 'px';
+      pane.style.height = (innerHeight - TOP_BAR_H - SUB_HDR_H - h3d) + 'px';
+    } else if (viewMode === 'split' && !isPortrait()) {
+      // Side-by-side: 3D left, 2D right
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.top = (TOP_BAR_H + SUB_HDR_H) + 'px';
+      hdr3d.style.display = 'flex';
+      hdr3d.style.top = TOP_BAR_H + 'px';
+      hdr3d.style.left = '0';
+      hdr3d.style.width = splitX + 'px';
       handle.style.display = 'block';
       handle.style.left = splitX + 'px';
       handle.style.height = (innerHeight - TOP_BAR_H) + 'px';
+      pane.style.display = 'block';
+      pane.classList.remove('stacked');
       pane.style.top = TOP_BAR_H + 'px';
       pane.style.left = splitX + 'px';
-      pane.style.right = 'auto';
       pane.style.width = (innerWidth - splitX) + 'px';
       pane.style.height = (innerHeight - TOP_BAR_H) + 'px';
     } else {
+      // 3D only
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.top = (TOP_BAR_H + SUB_HDR_H) + 'px';
+      hdr3d.style.display = 'flex';
+      hdr3d.style.top = TOP_BAR_H + 'px';
+      hdr3d.style.left = '0';
+      hdr3d.style.width = innerWidth + 'px';
       handle.style.display = 'none';
+      pane.style.display = 'none';
     }
 
-    dimLabel.style.left = (PANEL_W + w3d / 2) + 'px';
+    dimLabel.style.left = (w3d / 2) + 'px';
+    dimLabel.style.display = viewMode === '2d' ? 'none' : '';
   }
 
-  function setSplitMode(on) {
-    splitMode = on;
-    var pane = document.getElementById('splitPane');
-    pane.style.display = on ? 'block' : 'none';
-    document.getElementById('coverageBtn').textContent = on ? 'Hide 2D Coverage' : 'Show 2D Coverage';
+  function setViewMode(mode) {
+    viewMode = mode;
+    splitMode = (mode === 'split');
+    // Update pill buttons
+    document.querySelectorAll('.pill-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.view === mode);
+    });
     updateLayout();
-    if (on) {
+    if (mode === 'split' || mode === '2d') {
       resizeSplitCanvas();
       render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
     }
   }
+
+  // kept for internal backward-compat calls
+  function setSplitMode(on) { setViewMode(on ? 'split' : '3d'); }
 
   // ---- Animate ----
   var clock = new THREE.Clock();
@@ -1648,10 +1817,21 @@ window.toggleSection = function(id, hdr) {
   addEventListener('resize', function() {
     splitX = Math.floor(innerWidth * splitRatio);
     updateLayout();
-    if (splitMode) {
+    if (splitMode || viewMode === '2d') {
       resizeSplitCanvas();
       render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
     }
+  });
+  // Re-layout on orientation change (portrait ↔ landscape)
+  addEventListener('orientationchange', function() {
+    setTimeout(function() {
+      splitX = Math.floor(innerWidth * splitRatio);
+      updateLayout();
+      if (splitMode || viewMode === '2d') {
+        resizeSplitCanvas();
+        render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+      }
+    }, 120);
   });
   // ---- Import / Export ----
   function dataURLtoBlob(dataURL) {
@@ -1917,7 +2097,7 @@ window.toggleSection = function(id, hdr) {
   document.getElementById('measureClearBtn').addEventListener('click', function() {
     measurePoint = null;
     updateMeasureViz();
-    if (splitMode) render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    if (splitMode || viewMode === '2d') render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
   });
 
   // ---- Drag handle ----
