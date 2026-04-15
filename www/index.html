@@ -443,6 +443,7 @@
 </div>
 
 <div id="dimLabel"></div>
+<canvas id="watermark3D" style="position:fixed;pointer-events:none;z-index:15;opacity:1;"></canvas>
 
 <!-- Split-screen 2D coverage pane (right half) -->
 <div id="splitPane" style="display:none;position:fixed;background:#e8eaf0;border-left:1px solid #c4c8d4;">
@@ -1385,6 +1386,48 @@ window.toggleSection = function(id, hdr) {
       ctx.fillStyle = '#338833'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('H', (cx(0) + mpx) / 2 + 5, (cz(0) + mpz) / 2 - 6);
     }
+
+    // Watermark
+    drawWatermark(ctx, W, H);
+  }
+
+  // Draw diagonal tiled copyright watermark across the full canvas
+  function drawWatermark(ctx, W, H) {
+    var txt = '\u00A9 2026 Lumeova';
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = '#223355';
+    var fontSize = Math.max(13, Math.min(22, W / 22));
+    ctx.font = 'bold ' + fontSize + 'px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var angle = -Math.PI / 5;
+    var stepX = Math.max(180, W / 2.5);
+    var stepY = Math.max(100, H / 2.5);
+    for (var row = -2; row <= 4; row++) {
+      for (var col = -2; col <= 4; col++) {
+        var cx2 = col * stepX + (row % 2 === 0 ? 0 : stepX / 2);
+        var cy2 = row * stepY;
+        ctx.save();
+        ctx.translate(cx2, cy2);
+        ctx.rotate(angle);
+        ctx.fillText(txt, 0, 0);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Composite WebGL frame + watermark and return a data-URL
+  function get3DWithWatermark() {
+    renderer.render(scene, camera);
+    var src = renderer.domElement;
+    var tmp = document.createElement('canvas');
+    tmp.width = src.width; tmp.height = src.height;
+    var ctx = tmp.getContext('2d');
+    ctx.drawImage(src, 0, 0);
+    drawWatermark(ctx, tmp.width, tmp.height);
+    return tmp.toDataURL('image/png');
   }
 
   // ---- Click-to-measure ----
@@ -1799,6 +1842,15 @@ window.toggleSection = function(id, hdr) {
 
     dimLabel.style.left = (w3d / 2) + 'px';
     dimLabel.style.display = viewMode === '2d' ? 'none' : '';
+
+    // Resize and redraw the 3D watermark overlay canvas
+    var wm = document.getElementById('watermark3D');
+    wm.style.display = viewMode === '2d' ? 'none' : 'block';
+    wm.style.top  = (TOP_BAR_H + SUB_HDR_H) + 'px';
+    wm.style.left = '0';
+    wm.width  = w3d;
+    wm.height = h3d;
+    if (viewMode !== '2d') drawWatermark(wm.getContext('2d'), w3d, h3d);
   }
 
   function setViewMode(mode) {
@@ -2080,8 +2132,7 @@ window.toggleSection = function(id, hdr) {
     }
 
     if (do3D) {
-      renderer.render(scene, camera);
-      saveAs('view_3d.png', dataURLtoBlob(renderer.domElement.toDataURL('image/png')));
+      saveAs('view_3d.png', dataURLtoBlob(get3DWithWatermark()));
     }
 
     if (doData) {
