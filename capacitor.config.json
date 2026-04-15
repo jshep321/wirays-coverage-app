@@ -1,0 +1,11 @@
+{
+  "appId": "com.lumeova.coverage",
+  "appName": "WiRays Coverage",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}

@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WiRays&#174; Coverage</title>
+<link rel="icon" type="image/png" href="./favicon.png">
+<link rel="apple-touch-icon" href="./favicon.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #d8dce6; overflow: hidden; font-family: 'Segoe UI', sans-serif;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  canvas { display: block; }
+
+  #panel h3 {
+    font-size: 13px; color: #445; margin: 0 0 10px 0;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    cursor: pointer; display: flex; justify-content: space-between;
+    align-items: center; user-select: none;
+  }
+  .arr { font-size: 10px; color: #889; transition: transform 0.15s; flex-shrink: 0; }
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block; font-size: 11px; color: #667; margin-bottom: 3px;
+  }
+  .field .row { display: flex; gap: 6px; align-items: center; }
+  .field input[type=number] {
+    width: 70px; padding: 5px 8px; border: 1px solid #ccd;
+    border-radius: 6px; font-size: 13px; background: #f8f9fc;
+    text-align: center;
+  }
+  .field input[type=number]:focus { outline: none; border-color: #2266cc; }
+  .field .unit { font-size: 11px; color: #889; }
+  .sep { border: none; border-top: 1px solid #dde; margin: 12px 0; }
+
+  .slider-field { margin-bottom: 10px; }
+  .slider-field label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #667; margin-bottom: 3px;
+  }
+  .slider-field label span { color: #334; font-weight: 600; }
+  .slider-field input[type=range] { width: 100%; accent-color: #2266cc; }
+
+  #applyBtn {
+    width: 100%; padding: 8px; border: none; border-radius: 8px;
+    background: #2266cc; color: #fff; font-size: 13px; cursor: pointer;
+    font-weight: 600; margin-top: 4px;
+  }
+  #applyBtn:hover { background: #1a55b0; }
+  #applyBtn:active { background: #154a9a; }
+
+  #dimLabel {
+    position: fixed; bottom: 20px; transform: translateX(-50%);
+    background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
+    padding: 8px 18px; border-radius: 10px; font-size: 12px; color: #445;
+    pointer-events: none; z-index: 10;
+  }
+  #topBar {
+    position: fixed; top: 0; left: 0; right: 0; height: 44px;
+    background: rgba(255,255,255,0.90); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #ccd;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; z-index: 50;
+  }
+  #topBar .tb-left { font-size: 11px; color: #aab; min-width: 120px; }
+  #topBar .tb-center { flex: 1; text-align: center; }
+  #topBar .cov-info {
+    font-size: 15px; color: #334; font-weight: 600; letter-spacing: 0.2px;
+  }
+  #topBar .cov-info strong { color: #223; }
+  #topBar .cov-info .lbl { font-weight: 400; color: #667; }
+  #topBar .tb-right { min-width: 120px; display: flex; justify-content: flex-end; position: relative; }
+
+  #exportBtn {
+    padding: 6px 14px; border: 1px solid #bbc; border-radius: 7px;
+    background: #f0f2f7; color: #334; font-size: 12px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.3px;
+  }
+  #exportBtn:hover { background: #e2e6f0; border-color: #99a; }
+
+  #exportDropdown {
+    display: none; position: absolute; top: 36px; right: 0;
+    background: #fff; border: 1px solid #ccd; border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.13); padding: 14px 16px;
+    min-width: 210px; z-index: 200;
+  }
+  #exportDropdown.open { display: block; }
+  #exportDropdown .exp-title {
+    font-size: 11px; font-weight: 700; color: #445; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 10px;
+  }
+  #exportDropdown label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #334; cursor: pointer;
+    padding: 4px 0; user-select: none;
+  }
+  #exportDropdown label input[type=checkbox] { cursor: pointer; accent-color: #2266cc; }
+  #exportDropdown .exp-sep { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+  #exportDoBtn {
+    width: 100%; padding: 7px; border: none; border-radius: 7px;
+    background: #2266cc; color: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer; margin-bottom: 2px;
+  }
+  #exportDoBtn:hover { background: #1a55b0; }
+  #importFileBtn {
+    width: 100%; padding: 7px; border: 1px solid #bbc; border-radius: 7px;
+    background: #f0f2f7; color: #334; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  #importFileBtn:hover { background: #e2e6f0; }
+  #importStatus {
+    font-size: 11px; color: #559944; margin-top: 6px; min-height: 14px; text-align: center;
+  }
+
+  #saveAsModal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 300;
+    align-items: center; justify-content: center;
+  }
+  #saveAsModal.open { display: flex; }
+  #saveAsBox {
+    background: #fff; border-radius: 12px; padding: 20px 22px 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22); min-width: 300px;
+  }
+  #saveAsBox h4 {
+    font-size: 13px; font-weight: 700; color: #334;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+  }
+  #saveAsBox .sa-row { margin-bottom: 10px; }
+  #saveAsBox .sa-row label {
+    display: block; font-size: 11px; color: #667; margin-bottom: 3px;
+  }
+  #saveAsBox .sa-row input {
+    width: 100%; padding: 6px 8px; border: 1px solid #ccd;
+    border-radius: 6px; font-size: 13px; background: #f8f9fc;
+  }
+  #saveAsBox .sa-row input:focus { outline: none; border-color: #2266cc; }
+  #saveAsBox .sa-btns { display: flex; gap: 8px; margin-top: 14px; }
+  #saveAsBox .sa-btns button {
+    flex: 1; padding: 8px; border-radius: 7px; font-size: 13px;
+    font-weight: 600; cursor: pointer; border: none;
+  }
+  #saveAsConfirm { background: #2266cc; color: #fff; }
+  #saveAsConfirm:hover { background: #1a55b0; }
+  #saveAsCancel { background: #f0f2f7; color: #445; border: 1px solid #ccd !important; }
+  #saveAsCancel:hover { background: #e2e6f0; }
+
+  .measureBox {
+    display: none; position: absolute; bottom: 40px; left: 12px;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+    border-radius: 10px; padding: 10px 12px 8px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.16); z-index: 20; width: 174px;
+  }
+  .measureBox .mb-title {
+    font-size: 10px; font-weight: 700; color: #445; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .measureBox .mb-vals {
+    font-size: 12px; color: #334; line-height: 1.85; margin-top: 7px;
+  }
+  .measureBox .mb-clear {
+    margin-top: 7px; width: 100%; padding: 4px; border: 1px solid #ccd;
+    border-radius: 6px; background: #f4f5f9; color: #556;
+    font-size: 11px; cursor: pointer;
+  }
+  .measureBox .mb-clear:hover { background: #e8eaf0; }
+
+  #header3D {
+    position: fixed; top: 44px; height: 36px;
+    background: rgba(255,255,255,0.72); backdrop-filter: blur(8px);
+    border-bottom: 1px solid #dde;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; z-index: 40; box-sizing: border-box;
+  }
+  #header3D .hdr-title {
+    font-size: 12px; font-weight: 600; color: #445;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+
+  #dragHandle {
+    position: fixed; top: 44px; width: 6px; cursor: col-resize;
+    background: #c4c8d4; z-index: 70; display: none;
+    transition: background 0.15s;
+  }
+  #dragHandle:hover, #dragHandle.dragging { background: #2266cc; }
+  #panel {
+    position: fixed; top: 88px; left: 16px;
+    background: rgba(255,255,255,0.82); backdrop-filter: blur(10px);
+    border-radius: 12px; padding: 16px 20px; width: 240px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    overflow-y: auto; max-height: calc(100vh - 104px); z-index: 30;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top coverage bar (spans full width above 3D+2D) -->
+<div id="topBar">
+  <div class="tb-left">&copy; 2026 Lumeova</div>
+  <div class="tb-center">
+    <div class="cov-info">
+      <span class="lbl" id="coverageLabel">Coverage</span>:&nbsp;&nbsp;<strong><span id="covM2">—</span> m²</strong>&nbsp;&nbsp;(<span id="covPct">—</span>%)
+    </div>
+  </div>
+  <div class="tb-right">
+    <button id="exportBtn">Data &#x25BE;</button>
+    <div id="exportDropdown">
+      <div class="exp-title">Import</div>
+      <button id="importFileBtn">Import Settings (JSON)</button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none;">
+      <div id="importStatus"></div>
+      <hr class="exp-sep">
+      <div class="exp-title">Export</div>
+      <label><input type="checkbox" id="exp2D" checked> 2D Coverage Image</label>
+      <label><input type="checkbox" id="exp3D" checked> 3D View Image</label>
+      <label><input type="checkbox" id="expData" checked> Settings (JSON)</label>
+      <hr class="exp-sep">
+      <button id="exportDoBtn">Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3D view sub-header -->
+<div id="header3D">
+  <span class="hdr-title">3D View</span>
+</div>
+
+<!-- Draggable split divider -->
+<div id="dragHandle"></div>
+
+<div id="panel">
+  <div style="text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #dde;">
+    <img id="panelLogoImg" style="width:180px;height:auto;display:block;margin:0 auto;" alt="Lumeova">
+  </div>
+  <h3 onclick="window.toggleSection('secRoom',this)">Room Dimensions <span class="arr">▾</span></h3>
+  <div id="secRoom">
+    <div class="field">
+      <label>Width (X)</label>
+      <div class="row"><input type="number" id="roomX" value="10" min="2" max="40" step="0.5"><span class="unit">m</span></div>
+    </div>
+    <div class="field">
+      <label>Depth (Y)</label>
+      <div class="row"><input type="number" id="roomY" value="10" min="2" max="40" step="0.5"><span class="unit">m</span></div>
+    </div>
+    <div class="field">
+      <label>Height (Z)</label>
+      <div class="row"><input type="number" id="roomZ" value="3" min="2" max="12" step="0.25"><span class="unit">m</span></div>
+    </div>
+    <div class="field">
+      <label>Plane of Interest (Z')</label>
+      <div class="row"><input type="number" id="planeZInput" value="1.5" min="0" max="11" step="0.1"><span class="unit">m</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <input type="checkbox" id="planeZToggle" checked style="cursor:pointer;">
+      <label for="planeZToggle" style="font-size:11px;color:#667;cursor:pointer;user-select:none;">Calculate coverage at Z'</label>
+    </div>
+    <button id="applyBtn">Apply Dimensions</button>
+  </div>
+
+  <hr class="sep">
+  <h3 onclick="window.toggleSection('secBeams',this)">Beam Settings <span class="arr">▾</span></h3>
+  <div id="secBeams">
+    <div onclick="window.toggleSection('secCenter',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
+      <div style="width:3px;height:12px;background:#3388dd;border-radius:2px;flex-shrink:0;"></div>
+      <span style="font-size:10px;font-weight:700;color:#3388dd;text-transform:uppercase;letter-spacing:0.6px;">Center</span>
+      <span class="arr" style="margin-left:auto;">▾</span>
+    </div>
+    <div id="secCenter">
+      <div class="slider-field">
+        <label>Diffuser Angle <span id="centerWidthVal">40&deg;</span></label>
+        <input type="range" id="centerWidthSlider" min="0" max="180" value="40">
+      </div>
+    </div>
+    <hr class="sep">
+    <div onclick="window.toggleSection('secMid',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
+      <div style="width:3px;height:12px;background:#e07020;border-radius:2px;flex-shrink:0;"></div>
+      <span style="font-size:10px;font-weight:700;color:#e07020;text-transform:uppercase;letter-spacing:0.6px;">Middle Beams</span>
+      <span class="arr" style="margin-left:auto;">▾</span>
+    </div>
+    <div id="secMid">
+      <div class="slider-field">
+        <label>Count <span id="midCountVal">7</span></label>
+        <input type="range" id="midCountSlider" min="0" max="32" value="7">
+      </div>
+      <div class="slider-field">
+        <label>Angle <span id="midAngleVal">15&deg;</span></label>
+        <input type="range" id="midAngleSlider" min="0" max="180" value="15">
+      </div>
+      <div class="slider-field">
+        <label>Diffuser <span id="midWidthVal">20&deg;</span></label>
+        <input type="range" id="midWidthSlider" min="0" max="180" value="20">
+      </div>
+    </div>
+    <hr class="sep">
+    <div onclick="window.toggleSection('secOuter',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
+      <div style="width:3px;height:12px;background:#5566cc;border-radius:2px;flex-shrink:0;"></div>
+      <span style="font-size:10px;font-weight:700;color:#5566cc;text-transform:uppercase;letter-spacing:0.6px;">Outer Beams</span>
+      <span class="arr" style="margin-left:auto;">▾</span>
+    </div>
+    <div id="secOuter">
+      <div class="slider-field">
+        <label>Count <span id="outerCountVal">7</span></label>
+        <input type="range" id="outerCountSlider" min="0" max="32" value="7">
+      </div>
+      <div class="slider-field">
+        <label>Angle <span id="angleVal">30&deg;</span></label>
+        <input type="range" id="angleSlider" min="0" max="180" value="30">
+      </div>
+      <div class="slider-field">
+        <label>Diffuser <span id="widthVal">20&deg;</span></label>
+        <input type="range" id="widthSlider" min="0" max="180" value="20">
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+  <h3 onclick="window.toggleSection('secScene',this)">Scene <span class="arr">▾</span></h3>
+  <div id="secScene">
+    <div class="slider-field">
+      <label>Beam Intensity <span id="intensityVal">100%</span></label>
+      <input type="range" id="intensitySlider" min="20" max="100" value="100">
+    </div>
+    <div class="slider-field">
+      <label>Floor Grid Intensity <span id="gridIntensityVal">100%</span></label>
+      <input type="range" id="gridIntensitySlider" min="0" max="100" value="100">
+    </div>
+    <div class="slider-field">
+      <label>Z&prime; Plane Intensity <span id="planeIntensityVal">50%</span></label>
+      <input type="range" id="planeIntensitySlider" min="0" max="100" value="50">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <input type="checkbox" id="axesToggle" style="cursor:pointer;" checked>
+      <label for="axesToggle" style="font-size:11px;color:#667;cursor:pointer;user-select:none;">Enable Axes Highlight</label>
+    </div>
+    <hr class="sep">
+    <button id="coverageBtn" style="width:100%;padding:7px;border:none;border-radius:8px;background:#3a4a5c;color:#fff;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:2px;">Hide 2D Coverage</button>
+  </div>
+</div>
+
+<div id="dimLabel"></div>
+
+<!-- Split-screen 2D coverage pane (right half) -->
+<div id="splitPane" style="display:none;position:fixed;background:#e8eaf0;border-left:1px solid #c4c8d4;">
+  <div id="splitPaneHeader" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;background:rgba(255,255,255,0.72);backdrop-filter:blur(8px);border-bottom:1px solid #dde;">
+    <span style="font-size:12px;font-weight:600;color:#445;letter-spacing:0.5px;text-transform:uppercase;">2D Coverage</span>
+    <button id="expandCoverage" title="Expand to full screen" style="background:none;border:none;cursor:pointer;color:#667;padding:0 2px;line-height:1;"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/></svg></button>
+  </div>
+  <canvas id="canvas2DSplit" style="display:block;cursor:crosshair;"></canvas>
+  <div id="measureBox" class="measureBox">
+    <div class="mb-title">Distance from AP</div>
+    <canvas id="measureTriCanvas" width="150" height="96" style="display:block;"></canvas>
+    <div class="mb-vals" id="measureVals"></div>
+    <button class="mb-clear" id="measureClearBtn">&#x2715; Clear</button>
+  </div>
+  <div style="position:absolute;bottom:12px;left:16px;color:#889;font-size:11px;pointer-events:none;">&copy; 2026 Lumeova</div>
+</div>
+
+<!-- Full-screen 2D coverage modal -->
+<div id="modal2D" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:20px 20px 14px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.28);">
+    <button id="closeModal2D" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#667;">&times;</button>
+    <canvas id="canvas2D" width="600" height="600" style="display:block;border-radius:6px;cursor:crosshair;"></canvas>
+    <div id="canvas2DInfo" style="font-size:11px;text-align:center;margin-top:8px;color:#667;"></div>
+    <div id="measureBoxModal" class="measureBox" style="position:relative;bottom:auto;left:auto;margin-top:8px;width:auto;display:none;">
+      <div class="mb-title">Distance from AP</div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <canvas id="measureTriCanvasModal" width="150" height="96" style="display:block;flex-shrink:0;"></canvas>
+        <div class="mb-vals" id="measureValsModal"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Save-as filename modal (fallback for browsers without showSaveFilePicker) -->
+<div id="saveAsModal">
+  <div id="saveAsBox">
+    <h4>Save Files</h4>
+    <div id="saveAsRows"></div>
+    <div class="sa-btns">
+      <button id="saveAsConfirm">Save</button>
+      <button id="saveAsCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+window.toggleSection = function(id, hdr) {
+  var el = document.getElementById(id);
+  var collapsed = el.style.display === 'none';
+  el.style.display = collapsed ? '' : 'none';
+  var arr = hdr.querySelector('.arr');
+  if (arr) arr.style.transform = collapsed ? '' : 'rotate(-90deg)';
+};
+(function() {
+  'use strict';
+
+  // ---- State ----
+  var roomW = 10, roomH = 3, roomD = 10;
+  var planeZ = 1.5, usePlaneZ = true;
+  var beamAngleDeg = 30, diffuserAngle = 20, centerDiffuserAngle = 40, beamIntensity = 1.0;
+  var outerCount = 7;
+  var midBeamCount = 7, midBeamAngleDeg = 15, midDiffuserAngle = 20;
+  var MID_RING_FRAC = 0.55; // middle ring at 55% of outer ring radius
+  var centerBeamColor = 0x3388dd;
+  function outerBeamColor(i) {
+    var h = 0.575 + (outerCount > 1 ? (i / outerCount) * 0.1 : 0);
+    return new THREE.Color().setHSL(h, 0.65, 0.55).getHex();
+  }
+  function midBeamColor(i) {
+    var h = 0.07 + (midBeamCount > 1 ? (i / midBeamCount) * 0.06 : 0);
+    return new THREE.Color().setHSL(h, 0.75, 0.55).getHex();
+  }
+  var beams = [];
+  var axesHighlight = true;
+  var axisLineObjs = [];
+  var gridIntensity = 1.0;
+  var gridObj = null;
+  var planeZIntensity = 0.5;
+  var planeIntensityMats = [];
+  var coverageM2 = 0;
+  var coveragePct = 0;
+  var splitMode = false; // toggled to true after init
+  var measurePoint = null; // { wx, wz } in world coords, or null
+  var canvas2DLayouts = {}; // keyed by canvas id → { offX, offZ, scale }
+
+  // ---- Fixture constants ----
+  var BODY_DEPTH = 0.06;
+  var BODY_RADIUS = 0.125;
+  // Computed per rebuild, shared with beam builder
+  var outerBeamRadius = 0;
+  var outerBeamStartH = 0;
+
+  // ---- Lumeova logo SVG ----
+  var LUMEOVA_SVG = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="227.968" height="69.832" viewBox="0 0 227.968 69.832"><defs><radialGradient id="ld" cx="35.514" cy="-4.864" r="108.409" gradientTransform="translate(-8.261 -40.884) rotate(42.828)" gradientUnits="userSpaceOnUse"><stop offset=".025" stop-color="#ec1c24"/><stop offset=".523" stop-color="#be1e2d"/><stop offset="1" stop-color="#9c1521"/></radialGradient><radialGradient id="le" cx="35.517" cy="-4.841" r="108.366" xlink:href="#ld"/><radialGradient id="lf" cx="35.516" cy="-4.863" r="108.396" xlink:href="#ld"/><radialGradient id="lg" cx="35.514" cy="-4.865" r="108.402" xlink:href="#ld"/><radialGradient id="lh" cx="35.517" cy="-4.862" r="108.391" xlink:href="#ld"/><radialGradient id="li" cx="35.518" cy="-4.864" r="108.394" xlink:href="#ld"/><radialGradient id="lj" cx="35.504" cy="-4.864" r="108.412" xlink:href="#ld"/><radialGradient id="lk" cx="35.51" cy="-4.861" r="108.403" xlink:href="#ld"/><radialGradient id="ll" cx="35.514" cy="-4.857" r="108.39" xlink:href="#ld"/><radialGradient id="lm" cx="35.51" cy="-4.864" r="108.425" xlink:href="#ld"/><radialGradient id="ln" cx="35.515" cy="-4.862" r="108.399" xlink:href="#ld"/><radialGradient id="lo" cx="35.515" cy="-4.862" r="108.396" xlink:href="#ld"/><radialGradient id="lp" cx="35.544" cy="-4.864" r="108.371" xlink:href="#ld"/><radialGradient id="lq" cx="35.513" cy="-4.866" r="108.402" xlink:href="#ld"/><radialGradient id="lr" cx="35.511" cy="-4.865" r="108.404" xlink:href="#ld"/><radialGradient id="ls" cx="35.518" cy="-4.861" r="108.39" xlink:href="#ld"/><radialGradient id="lt" cx="35.513" cy="-4.861" r="108.395" xlink:href="#ld"/><radialGradient id="lu" cx="108.885" cy="-4.836" r="108.394" gradientTransform="translate(167.607 122.097) rotate(-137.172) scale(1 -1)" xlink:href="#ld"/><radialGradient id="lv" cx="108.884" cy="-4.838" r="108.398" gradientTransform="translate(167.607 122.097) rotate(-137.172) scale(1 -1)" xlink:href="#ld"/><radialGradient id="lw" cx="108.884" cy="-4.837" r="108.397" gradientTransform="translate(167.607 122.097) rotate(-137.172) scale(1 -1)" xlink:href="#ld"/><radialGradient id="lx" cx="35.518" cy="-4.865" r="108.393" xlink:href="#ld"/></defs><g><g><g><path d="m63.385,45.314c-3.425,0-5.891-.833-7.395-2.5-1.505-1.689-2.256-9.179-2.256-22.466h5.208v13.715l.034,1.528.07,1.771c.138,1.458.775,2.477,1.91,3.055.879.51,4.19.763,9.931.763v4.133h-7.501Z" fill="#be1e2d"/><path d="m94.184,39.584c-.277,1.066-.926,2.292-1.945,3.681-.462.624-1.25,1.134-2.361,1.527l-1.597.487c-.578.116-1.123.173-1.632.173l-2.95.139-2.848-.103c-.486,0-.961-.036-1.423-.104-.393-.024-.996-.185-1.806-.487-1.111-.393-1.91-.879-2.396-1.458-.348-.438-.695-.949-1.042-1.527-.324-.533-.591-1.03-.798-1.494-.348-.903-.521-2.001-.521-3.299v-16.771h5.277v15c0,2.27.359,3.833,1.077,4.688.879,1.042,2.373,1.563,4.48,1.563,2.152,0,3.645-.521,4.478-1.563.741-.949,1.111-7.512,1.111-19.688h5.208v15.139c0,1.852-.105,3.218-.312,4.097Z" fill="#be1e2d"/><path d="m120.155,45.314l.418-19.41-6.355,19.41h-5.59l-6.527-19.584.555,19.584h-5.382v-24.966h7.708l6.32,19.133,6.353-19.133h7.674v24.966h-5.174Z" fill="#be1e2d"/><path d="m139.808,45.314l-2.222-.104-.799-.034c-.185,0-.406-.034-.659-.105-.163-.046-.255-.081-.278-.104-.14-.022-.243-.046-.314-.069-2.477-.625-4.374-2.093-5.694-4.409-.555-.926-.973-1.944-1.25-3.057-.301-1.041-.453-2.164-.453-3.368,0-2.292.186-4.224.557-5.799.369-1.62.994-3.02,1.875-4.201,1.018-1.365,2.292-2.314,3.82-2.847.626-.23,1.515-.451,2.673-.659,1.018-.139,4.873-.209,11.562-.209v4.341h-8.61c-3.935,0-5.903,1.944-5.903,5.833h14.513v4.341h-14.513c0,.995.081,1.829.244,2.5.068.371.172.718.312,1.041.116.256.314.544.591.869l.937.902c.3.233.671.418,1.111.556.462.139.891.208,1.284.208l10.034.035v4.34h-8.818Z" fill="#be1e2d"/><path d="m172.829,42.571c-.995,1.066-2.28,1.874-3.853,2.43-1.551.556-3.415.834-5.591.834-4.213,0-7.349-1.099-9.409-3.299-2.038-2.176-3.055-5.428-3.055-9.757,0-4.236,1.017-7.442,3.055-9.618,2.037-2.199,4.861-3.298,8.473-3.298s6.354.52,8.229,1.562c2.129,1.157,3.611,3.113,4.444,5.869.255.971.451,2.037.591,3.194.138,1.25.208,2.639.208,4.167,0,3.079-1.031,5.719-3.09,7.917Zm-4.028-15.765c-1.136-1.759-2.94-2.639-5.417-2.639-2.36,0-4.131.868-5.311,2.604-.973,1.459-1.459,3.195-1.459,5.209,0,2.107.22,3.936.66,5.487.185.718.486,1.4.903,2.048.486.626,1.087,1.078,1.805,1.354l1.736.486c.695.138,1.76.209,3.196.209,1.389,0,2.674-.869,3.854-2.605.949-1.504,1.424-3.53,1.424-6.077,0-2.639-.465-4.664-1.39-6.077Z" fill="#be1e2d"/><path d="m191.337,45.314h-5.452l-10.798-24.966h5.868l7.501,18.577,7.674-18.577h5.555l-10.347,24.966Z" fill="#be1e2d"/><path d="m216.093,45.314l-2.29-5.973h-10.87l-2.153,5.973h-5.555l10.485-24.966h5.556l10.66,24.966h-5.833Zm-7.778-19.931l-3.68,9.549h7.465l-3.784-9.549Z" fill="#be1e2d"/></g><g><g><path d="m36.38,38.172c-1.753.783-3.818.002-4.606-1.756-.789-1.761,0-3.825,1.752-4.61,1.761-.789,3.822-.004,4.611,1.755.785,1.757.002,3.819-1.758,4.61Z" fill="#231f20"/><path d="m16.212,46.703c-1.527.688-3.314.005-4.001-1.522-.683-1.527,0-3.315,1.524-3.998,1.529-.685,3.317-.004,4.002,1.522.686,1.525-.001,3.317-1.525,3.998Z" fill="#231f20"/><path d="m27.235,17.767c-1.522.686-3.315,0-3.999-1.525-.681-1.526,0-3.317,1.526-3.998,1.528-.685,3.317-.004,4.002,1.524.682,1.523,0,3.316-1.528,3.999Z" fill="#231f20"/><path d="m50.577,18.331c-.594,1.565-2.345,2.348-3.909,1.754-1.558-.596-2.345-2.349-1.752-3.91.598-1.561,2.347-2.346,3.912-1.75,1.562.595,2.345,2.345,1.749,3.906Z" fill="#231f20"/><path d="m39.993,14.317c-.592,1.561-2.345,2.345-3.907,1.751-1.56-.593-2.345-2.345-1.75-3.908.596-1.56,2.345-2.346,3.906-1.751,1.563.596,2.347,2.347,1.751,3.908Z" fill="#231f20"/><path d="m20.049,23.164c-.597,1.562-2.346,2.345-3.908,1.751-1.563-.597-2.345-2.345-1.751-3.907.597-1.564,2.345-2.347,3.908-1.75,1.561.594,2.344,2.343,1.751,3.906Z" fill="#231f20"/><path d="m16.013,33.752c-.597,1.564-2.34,2.349-3.905,1.752-1.563-.599-2.345-2.345-1.75-3.91.594-1.563,2.343-2.345,3.904-1.752,1.565.597,2.35,2.346,1.751,3.91Z" fill="#231f20"/><path d="m50.909,45.43c-1.513.71-2.161,2.515-1.449,4.028.714,1.512,2.515,2.161,4.028,1.449,1.512-.712,2.163-2.515,1.449-4.028-.709-1.512-2.513-2.161-4.028-1.449Z" fill="#231f20"/><path d="m41.588,53.125c-1.513.712-2.163,2.513-1.448,4.026.712,1.514,2.513,2.162,4.026,1.45,1.516-.711,2.164-2.512,1.454-4.026-.716-1.516-2.516-2.164-4.033-1.451Z" fill="#231f20"/><path d="m24.896,53.774c-.593,1.561-2.345,2.345-3.904,1.751-1.563-.594-2.348-2.342-1.751-3.903.592-1.566,2.338-2.35,3.906-1.752,1.563.594,2.345,2.344,1.749,3.904Z" fill="#231f20"/><path d="m35.442,57.922c-.597,1.561-2.345,2.344-3.91,1.75-1.558-.594-2.347-2.343-1.749-3.903.596-1.566,2.343-2.35,3.905-1.756,1.565.6,2.347,2.348,1.753,3.909Z" fill="#231f20"/></g><g><path d="m22.418,7.014c-1.104.494-2.4-.002-2.894-1.103-.495-1.105-.001-2.401,1.1-2.896,1.105-.493,2.399,0,2.894,1.106.496,1.104.004,2.396-1.099,2.893Z" fill="url(#ld)"/><path d="m5.877,50.424c-1.103.49-2.396,0-2.893-1.102-.497-1.108-.003-2.402,1.102-2.896,1.106-.495,2.397.002,2.892,1.104.498,1.103.004,2.397-1.101,2.895Z" fill="url(#le)"/><path d="m29.804,48.512c-1.875-.713-2.817-2.814-2.1-4.689.712-1.875,2.809-2.814,4.687-2.101,1.874.714,2.814,2.815,2.096,4.687-.709,1.877-2.81,2.816-4.683,2.103Z" fill="url(#lf)"/><path d="m23.536,34.524c-1.879-.714-2.818-2.811-2.105-4.689.715-1.874,2.814-2.816,4.688-2.1,1.878.713,2.817,2.811,2.101,4.69-.711,1.872-2.813,2.81-4.685,2.099Z" fill="url(#lg)"/><path d="m42.229,26.094c-.681,1.887-2.765,2.864-4.652,2.18-1.886-.68-2.859-2.764-2.181-4.649.683-1.885,2.766-2.862,4.654-2.181,1.887.684,2.86,2.765,2.179,4.65Z" fill="url(#lh)"/><path d="m31.962,28.313c-1.832.82-3.977,0-4.798-1.83-.822-1.831-.006-3.982,1.827-4.801,1.831-.819,3.982-.002,4.8,1.829.822,1.832,0,3.981-1.829,4.803Z" fill="url(#li)"/><path d="m40.918,48.295c-1.832.819-3.98,0-4.802-1.831-.817-1.832,0-3.978,1.829-4.799,1.836-.821,3.981-.002,4.802,1.827.825,1.831.002,3.982-1.829,4.803Z" fill="url(#lj)"/><path d="m46.432,33.825c-1.832.82-3.98.003-4.799-1.828-.824-1.83-.007-3.98,1.826-4.802,1.83-.82,3.981,0,4.8,1.83.822,1.833.004,3.981-1.828,4.801Z" fill="url(#lk)"/><path d="m26.449,42.78c-1.832.822-3.979.005-4.8-1.828-.822-1.829-.002-3.98,1.831-4.801,1.829-.82,3.978-.003,4.801,1.831.822,1.827.001,3.979-1.831,4.798Z" fill="url(#ll)"/><path d="m34.848,4.189c-1.106.495-2.399.003-2.896-1.102-.491-1.104-.001-2.4,1.103-2.895,1.104-.495,2.4,0,2.896,1.107.494,1.101.001,2.398-1.102,2.891Z" fill="url(#lm)"/><path d="m47.519,6.267c-1.104.494-2.4.003-2.894-1.101-.495-1.105.001-2.401,1.103-2.894,1.101-.495,2.4,0,2.895,1.103.495,1.101,0,2.398-1.104,2.892Z" fill="url(#ln)"/><path d="m58.286,13.121c-1.104.494-2.4,0-2.895-1.105-.493-1.101,0-2.398,1.102-2.891,1.105-.498,2.399-.004,2.893,1.1.497,1.102.004,2.4-1.1,2.896Z" fill="url(#lo)"/><path d="m24.205,67.665c-1.1.494-2.398,0-2.894-1.102-.494-1.102,0-2.397,1.104-2.894,1.102-.494,2.397-.003,2.894,1.102.492,1.104,0,2.4-1.104,2.895Z" fill="url(#lp)"/><path d="m13.326,60.85c-1.104.496-2.401,0-2.895-1.1-.493-1.104,0-2.401,1.102-2.899,1.102-.492,2.399.002,2.894,1.106.493,1.103.003,2.4-1.101,2.894Z" fill="url(#lq)"/><path d="m3.087,38.009c-1.103.491-2.399,0-2.895-1.104-.495-1.104,0-2.4,1.104-2.895,1.102-.493,2.4,0,2.896,1.105.493,1.102-.001,2.399-1.104,2.894Z" fill="url(#lr)"/><path d="m5.132,25.31c-1.104.496-2.401-.001-2.896-1.102-.493-1.105-.002-2.401,1.104-2.895,1.103-.497,2.397,0,2.892,1.103.495,1.103,0,2.398-1.1,2.894Z" fill="url(#ls)"/><path d="m11.945,14.431c-1.103.494-2.398-.003-2.892-1.103-.499-1.104-.004-2.403,1.099-2.895,1.108-.492,2.402-.002,2.898,1.102.493,1.103-.001,2.402-1.104,2.897Z" fill="url(#lt)"/><path d="m34.256,66.899c-.407,1.138.181,2.393,1.319,2.802,1.139.411,2.391-.181,2.803-1.319.409-1.138-.181-2.391-1.32-2.801-1.138-.41-2.392.18-2.802,1.318Z" fill="url(#lu)"/><path d="m46.762,63.896c-.411,1.14.184,2.396,1.317,2.803,1.14.411,2.395-.178,2.805-1.318.411-1.138-.183-2.391-1.32-2.801-1.137-.409-2.391.183-2.802,1.316Z" fill="url(#lv)"/><path d="m57.093,56.281c-.41,1.136.185,2.391,1.319,2.8,1.138.411,2.397-.179,2.804-1.317.408-1.141-.179-2.394-1.319-2.803-1.139-.409-2.395.183-2.804,1.32Z" fill="url(#lw)"/><path d="m48.478,40.142c-.715,1.874-2.812,2.814-4.69,2.1-1.873-.714-2.814-2.813-2.098-4.685.714-1.877,2.812-2.819,4.686-2.105,1.878.718,2.816,2.816,2.102,4.69Z" fill="url(#lx)"/></g></g></g><path d="m227.195,44.964c-.515.518-1.138.777-1.869.777s-1.353-.259-1.866-.777c-.51-.515-.766-1.14-.766-1.873,0-.726.258-1.347.773-1.862s1.132-.769,1.859-.769c.731,0,1.354.256,1.869.769s.773,1.134.773,1.862-.258,1.355-.773,1.873Zm-3.473-3.476c-.441.443-.661.979-.661,1.607,0,.633.219,1.172.658,1.618.441.446.977.669,1.607.669s1.166-.223,1.607-.669.661-.985.661-1.618c0-.628-.22-1.164-.661-1.607-.443-.446-.979-.669-1.607-.669s-1.16.223-1.603.669Zm1.553.147c.359,0,.623.035.791.104.3.125.449.369.449.734,0,.259-.094.45-.283.572-.1.065-.24.111-.419.14.226.036.392.13.497.284s.157.303.157.449v.212c0,.067.002.139.007.216.005.076.013.127.025.151l.018.036h-.478l-.007-.029c-.002-.01-.005-.02-.007-.032l-.011-.093v-.229c0-.334-.091-.556-.273-.663-.108-.062-.297-.093-.568-.093h-.403v1.14h-.51v-2.898h1.014Zm.551.457c-.129-.072-.335-.108-.618-.108h-.436v1.05h.461c.216,0,.379-.022.487-.065.199-.079.299-.23.299-.453,0-.211-.064-.352-.193-.424Z" fill="#231f20"/></g></svg>';
+  // ---- Lumeova logo 3D texture (for fixture use if needed) ----
+  var logoTexture = (function () {
+    var canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 420;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1a1a22';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var tex = new THREE.CanvasTexture(canvas);
+    var img = new Image();
+    var blob = new Blob([LUMEOVA_SVG], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    img.onload = function () {
+      var pad = 36;
+      var dw = canvas.width - pad * 2;
+      var dh = dw * (69.832 / 227.968);
+      ctx.drawImage(img, pad, (canvas.height - dh) / 2, dw, dh);
+      tex.needsUpdate = true;
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    return tex;
+  }());
+
+  // ---- Panel logo ----
+  (function () {
+    var blob = new Blob([LUMEOVA_SVG], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    var panelImg = document.getElementById('panelLogoImg');
+    panelImg.onload = function () { URL.revokeObjectURL(url); };
+    panelImg.src = url;
+  }());
+
+  // ---- Scene ----
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xd8dce6);
+
+  // Panel is 240px wide at left:16px → 3D canvas starts at 272px
+  var PANEL_W = 272;
+  var TOP_BAR_H = 44;
+  var SUB_HDR_H = 36;
+  var splitX = Math.floor(innerWidth / 2);
+  var splitRatio = 0.5;
+
+  function get3DWidth() {
+    return (splitMode ? splitX : innerWidth) - PANEL_W;
+  }
+  function get3DHeight() {
+    return innerHeight - TOP_BAR_H - SUB_HDR_H;
+  }
+
+  var camera = new THREE.PerspectiveCamera(55, get3DWidth() / get3DHeight(), 0.1, 200);
+  var renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setSize(get3DWidth(), get3DHeight());
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.localClippingEnabled = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.4;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.domElement.style.position = 'fixed';
+  renderer.domElement.style.top = (TOP_BAR_H + SUB_HDR_H) + 'px';
+  renderer.domElement.style.left = PANEL_W + 'px';
+  document.body.appendChild(renderer.domElement);
+
+  var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+  orbitControls.enableDamping = true;
+  orbitControls.dampingFactor = 0.07;
+  orbitControls.maxPolarAngle = Math.PI * 0.85;
+
+  // ---- Lights ----
+  scene.add(new THREE.AmbientLight(0xc8cce0, 0.7));
+  var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  dirLight.position.set(5, 12, 5);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+  scene.add(new THREE.HemisphereLight(0xe8ecf4, 0x8888a0, 0.4));
+
+  // ---- Shared materials ----
+  var bodyWhite  = new THREE.MeshStandardMaterial({ color: 0x2e2e3a, roughness: 0.3, metalness: 0.25 });
+  var bodyEdge   = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.35, metalness: 0.3 });
+  var darkAccent = new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.4, metalness: 0.3 });
+  var emitterGlow = new THREE.MeshStandardMaterial({
+    color: 0xaaccff, emissive: 0x3366cc, emissiveIntensity: 1.0, metalness: 0.3, roughness: 0.15
+  });
+  var ledMat = new THREE.MeshStandardMaterial({
+    color: 0x44ff88, emissive: 0x22cc66, emissiveIntensity: 2
+  });
+  var floorMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc8, roughness: 0.7, metalness: 0.05 });
+  var ceilMat  = new THREE.MeshStandardMaterial({ color: 0xe8ecf4, roughness: 0.85, metalness: 0.02, side: THREE.DoubleSide });
+  var wallMat  = new THREE.MeshStandardMaterial({
+    color: 0xd0d4e0, roughness: 0.8, metalness: 0.02, transparent: true, opacity: 0.3, side: THREE.DoubleSide
+  });
+
+  // ---- Dynamic groups ----
+  var roomGroup    = new THREE.Group();
+  var fixtureGroup = new THREE.Group();
+  var beamGroup    = new THREE.Group();
+  var planeGroup   = new THREE.Group();
+  scene.add(roomGroup);
+  scene.add(fixtureGroup);
+  scene.add(beamGroup);
+  scene.add(planeGroup);
+  var measureGroup = new THREE.Group();
+  scene.add(measureGroup);
+
+  // ---- Dimension label ----
+  var dimLabel = document.getElementById('dimLabel');
+  function updateDimLabel() {
+    dimLabel.textContent = 'X: ' + roomW + ' m \u00d7 Y: ' + roomD + ' m \u00d7 Z: ' + roomH + ' m';
+    dimLabel.style.left = (PANEL_W + get3DWidth() / 2) + 'px';
+  }
+
+  // ===============================
+  // Build scene for current dims
+  // ===============================
+  function clearGroup(g) {
+    while (g.children.length > 0) g.remove(g.children[0]);
+  }
+
+  function rebuildScene() {
+    clearGroup(roomGroup);
+    clearGroup(fixtureGroup);
+    clearGroup(beamGroup);
+    beams = [];
+
+    scene.fog = new THREE.FogExp2(0xd8dce6, 0.6 / Math.max(roomW, roomD));
+
+    // --- Room ---
+    var floor = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomD), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    roomGroup.add(floor);
+
+    // Walls
+    var bw = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
+    bw.position.set(0, roomH / 2, -roomD / 2);
+    roomGroup.add(bw);
+    var fw = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
+    fw.position.set(0, roomH / 2, roomD / 2);
+    fw.rotation.y = Math.PI;
+    roomGroup.add(fw);
+    var lw = new THREE.Mesh(new THREE.PlaneGeometry(roomD, roomH), wallMat);
+    lw.rotation.y = Math.PI / 2;
+    lw.position.set(-roomW / 2, roomH / 2, 0);
+    roomGroup.add(lw);
+    var rw = new THREE.Mesh(new THREE.PlaneGeometry(roomD, roomH), wallMat);
+    rw.rotation.y = -Math.PI / 2;
+    rw.position.set(roomW / 2, roomH / 2, 0);
+    roomGroup.add(rw);
+
+    // Grid
+    var gridSize = Math.max(roomW, roomD);
+    gridObj = new THREE.GridHelper(gridSize, Math.round(gridSize), 0x9999aa, 0xaaaabc);
+    gridObj.position.y = 0.01;
+    if (Array.isArray(gridObj.material)) {
+      gridObj.material.forEach(function(m) { m.transparent = true; m.opacity = gridIntensity; });
+    } else {
+      gridObj.material.transparent = true;
+      gridObj.material.opacity = gridIntensity;
+    }
+    roomGroup.add(gridObj);
+
+    // ---- Fixture ----
+    fixtureGroup.position.set(0, roomH, 0);
+
+    // N = polygon sides matches outerCount (min 3; 0 outer beams → circular)
+    var polyN = outerCount >= 3 ? outerCount : (outerCount > 0 ? outerCount : 32);
+    var inRadius = BODY_RADIUS * Math.cos(Math.PI / polyN);
+    var edgeLen  = 2 * BODY_RADIUS * Math.sin(Math.PI / polyN);
+
+    // Expose to beam builder
+    outerBeamRadius = inRadius;
+    outerBeamStartH = roomH - BODY_DEPTH;
+
+    // Mounting plate
+    var mount = new THREE.Mesh(new THREE.CylinderGeometry(BODY_RADIUS + 0.02, BODY_RADIUS + 0.02, 0.01, polyN), bodyEdge);
+    fixtureGroup.add(mount);
+
+    // N-gon puck body
+    var pShape = new THREE.Shape();
+    for (var i = 0; i < polyN; i++) {
+      var a = (i / polyN) * Math.PI * 2;
+      if (i === 0) pShape.moveTo(Math.cos(a) * BODY_RADIUS, Math.sin(a) * BODY_RADIUS);
+      else         pShape.lineTo(Math.cos(a) * BODY_RADIUS, Math.sin(a) * BODY_RADIUS);
+    }
+    pShape.closePath();
+    var bodyMesh = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(pShape, {
+        depth: BODY_DEPTH, bevelEnabled: true,
+        bevelThickness: 0.005, bevelSize: 0.007, bevelSegments: 2
+      }), bodyWhite
+    );
+    bodyMesh.rotation.x = Math.PI / 2;
+    bodyMesh.position.y = -0.02;
+    bodyMesh.castShadow = true;
+    fixtureGroup.add(bodyMesh);
+
+    // Bottom trim ring
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(BODY_RADIUS - 0.008, 0.004, 8, polyN), darkAccent);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = -BODY_DEPTH - 0.006;
+    fixtureGroup.add(ring);
+
+    // Center recess + emitter
+    var recess = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 32), darkAccent);
+    recess.position.y = -BODY_DEPTH - 0.008;
+    fixtureGroup.add(recess);
+    var centerLens = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.008, 32), emitterGlow);
+    centerLens.position.y = -BODY_DEPTH - 0.016;
+    fixtureGroup.add(centerLens);
+
+    // Emitter slit on each vertical face
+    var slitMat = new THREE.MeshStandardMaterial({
+      color: 0xaaccff, emissive: 0x3366cc, emissiveIntensity: 1.2, roughness: 0.15, metalness: 0.3
+    });
+
+    for (var fi = 0; fi < outerCount; fi++) {
+      var az = (fi / outerCount) * Math.PI * 2;
+      var fx = Math.cos(az) * inRadius;
+      var fz = Math.sin(az) * inRadius;
+      var ry = Math.PI / 2 - az; // outward-facing normal
+
+      // Emitter slit: lower ~25% of face
+      var slit = new THREE.Mesh(
+        new THREE.PlaneGeometry(edgeLen * 0.72, BODY_DEPTH * 0.22),
+        slitMat
+      );
+      slit.position.set(fx, -BODY_DEPTH * 0.88, fz);
+      slit.rotation.y = ry;
+      fixtureGroup.add(slit);
+    }
+
+    // Middle ring emitter dots on body underside
+    if (midBeamCount > 0) {
+      var midEmitMat = new THREE.MeshStandardMaterial({
+        color: 0xffaa44, emissive: 0xcc5500, emissiveIntensity: 1.6, roughness: 0.12, metalness: 0.2
+      });
+      var midRingR = outerBeamRadius * MID_RING_FRAC;
+      for (var mi = 0; mi < midBeamCount; mi++) {
+        var maz = (mi / midBeamCount) * Math.PI * 2;
+        var mdot = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.007, 16), midEmitMat);
+        mdot.position.set(Math.cos(maz) * midRingR, -BODY_DEPTH - 0.01, Math.sin(maz) * midRingR);
+        fixtureGroup.add(mdot);
+      }
+    }
+
+    // ---- Beams ----
+    beamGroup.position.set(0, roomH - BODY_DEPTH - 0.01, 0);
+    buildBeams();
+
+    // ---- Axis labels (X, Y=depth, Z=height) ----
+    var axisLen = Math.max(0.5, Math.min(1.4, Math.min(roomW, roomD, roomH) * 0.22));
+    var axOrigin = new THREE.Vector3(-roomW / 2, 0.02, roomD / 2);
+
+    function makeAxisSprite(label, color) {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.font = 'bold 46px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 32, 32);
+      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false }));
+      sp.scale.set(0.45, 0.45, 1);
+      return sp;
+    }
+
+    var xArr = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), axOrigin, axisLen, 0xff3333, axisLen * 0.25, axisLen * 0.14);
+    var yArr = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), axOrigin, axisLen, 0x33aa33, axisLen * 0.25, axisLen * 0.14);
+    var zArr = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), axOrigin, axisLen, 0x3377ff, axisLen * 0.25, axisLen * 0.14);
+    roomGroup.add(xArr); roomGroup.add(yArr); roomGroup.add(zArr);
+
+    var xLbl = makeAxisSprite('X', '#ff4444');
+    xLbl.position.set(-roomW / 2 + axisLen + 0.3, 0.18, roomD / 2);
+    var yLbl = makeAxisSprite('Y', '#44bb44');
+    yLbl.position.set(-roomW / 2, 0.18, roomD / 2 - axisLen - 0.3);
+    var zLbl = makeAxisSprite('Z', '#4488ff');
+    zLbl.position.set(-roomW / 2, axisLen + 0.3, roomD / 2);
+    roomGroup.add(xLbl); roomGroup.add(yLbl); roomGroup.add(zLbl);
+
+    // ---- Axis highlight lines (full room extent) ----
+    axisLineObjs = [];
+    function makeAxisLine(p0, p1, color) {
+      var geo = new THREE.BufferGeometry().setFromPoints([p0, p1]);
+      var line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: color, linewidth: 2 }));
+      line.visible = axesHighlight;
+      roomGroup.add(line);
+      axisLineObjs.push(line);
+    }
+    makeAxisLine(
+      new THREE.Vector3(-roomW / 2, 0.015, roomD / 2),
+      new THREE.Vector3( roomW / 2, 0.015, roomD / 2),
+      0xcc1111
+    );
+    makeAxisLine(
+      new THREE.Vector3(-roomW / 2, 0.015,  roomD / 2),
+      new THREE.Vector3(-roomW / 2, 0.015, -roomD / 2),
+      0x117711
+    );
+    makeAxisLine(
+      new THREE.Vector3(-roomW / 2, 0,      roomD / 2),
+      new THREE.Vector3(-roomW / 2, roomH,  roomD / 2),
+      0x1155cc
+    );
+
+    // ---- Camera ----
+    camera.position.set(roomW * 0.7, roomH * 0.5, roomD * 0.8);
+    orbitControls.target.set(0, roomH * 0.4, 0);
+    orbitControls.update();
+
+    updateDimLabel();
+    buildPlaneOfInterest();
+  }
+
+  function buildPlaneOfInterest() {
+    while (planeGroup.children.length > 0) planeGroup.remove(planeGroup.children[0]);
+    if (!usePlaneZ || planeZ <= 0 || planeZ >= roomH) return;
+
+    var geo = new THREE.PlaneGeometry(roomW, roomD);
+
+    planeIntensityMats = [];
+    // Filled plane
+    var mat = new THREE.MeshBasicMaterial({
+      color: 0xffcc33, transparent: true, opacity: planeZIntensity,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+    planeIntensityMats.push(mat);
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = planeZ;
+    planeGroup.add(mesh);
+
+    // Perimeter outline
+    var edgePts = [
+      new THREE.Vector3(-roomW/2, planeZ, -roomD/2),
+      new THREE.Vector3( roomW/2, planeZ, -roomD/2),
+      new THREE.Vector3( roomW/2, planeZ,  roomD/2),
+      new THREE.Vector3(-roomW/2, planeZ,  roomD/2),
+      new THREE.Vector3(-roomW/2, planeZ, -roomD/2)
+    ];
+    planeGroup.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(edgePts),
+      new THREE.LineBasicMaterial({ color: 0xff9900, linewidth: 2 })
+    ));
+
+    // Inner grid lines every 1 m for visual depth
+    var gridMat = new THREE.LineBasicMaterial({ color: 0xffbb22, transparent: true, opacity: 0.35 });
+    for (var gx = Math.ceil(-roomW/2) + 1; gx < roomW/2; gx++) {
+      var g = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(gx, planeZ, -roomD/2),
+        new THREE.Vector3(gx, planeZ,  roomD/2)
+      ]);
+      planeGroup.add(new THREE.Line(g, gridMat));
+    }
+    for (var gz = Math.ceil(-roomD/2) + 1; gz < roomD/2; gz++) {
+      var g2 = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-roomW/2, planeZ, gz),
+        new THREE.Vector3( roomW/2, planeZ, gz)
+      ]);
+      planeGroup.add(new THREE.Line(g2, gridMat));
+    }
+
+    // Z' label sprite
+    var lc = document.createElement('canvas');
+    lc.width = 128; lc.height = 40;
+    var lctx = lc.getContext('2d');
+    lctx.fillStyle = 'rgba(255,170,0,0.85)';
+    lctx.roundRect(2, 2, 124, 36, 6);
+    lctx.fill();
+    lctx.fillStyle = '#fff';
+    lctx.font = 'bold 22px sans-serif';
+    lctx.textAlign = 'center';
+    lctx.textBaseline = 'middle';
+    lctx.fillText("Z' = " + planeZ.toFixed(1) + ' m', 64, 20);
+    var lsp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(lc), depthTest: false
+    }));
+    lsp.scale.set(1.2, 0.38, 1);
+    lsp.position.set(roomW / 2 - 0.8, planeZ + 0.22, -roomD / 2 + 0.8);
+    planeGroup.add(lsp);
+  }
+
+  // ---- Beam builder ----
+  // Clipping planes: keep fragments inside the room (world space)
+  function buildRoomClipPlanes() {
+    return [
+      new THREE.Plane(new THREE.Vector3(0,  1, 0),       0),          // floor (y >= 0)
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0),  roomW / 2),       // x <= roomW/2
+      new THREE.Plane(new THREE.Vector3( 1, 0, 0),  roomW / 2),       // x >= -roomW/2
+      new THREE.Plane(new THREE.Vector3(0,  0, -1), roomD / 2),       // z <= roomD/2
+      new THREE.Plane(new THREE.Vector3(0,  0,  1), roomD / 2)        // z >= -roomD/2
+    ];
+  }
+
+  function createBeamMaterial(color) {
+    return new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: {
+        uColor:     { value: new THREE.Color(color) },
+        uIntensity: { value: beamIntensity },
+        uTime:      { value: 0 },
+        uCamPos:    { value: camera.position },
+        uRoomHalfW: { value: roomW / 2 },
+        uRoomHalfD: { value: roomD / 2 }
+      },
+      vertexShader:
+        'varying vec3 vPos; varying vec2 vUv; varying vec3 vWorldPos;\n' +
+        'void main() {\n' +
+        '  vPos = position; vUv = uv;\n' +
+        '  vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;\n' +
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n' +
+        '}',
+      fragmentShader:
+        'uniform vec3 uColor; uniform float uIntensity; uniform float uTime; uniform vec3 uCamPos;\n' +
+        'uniform float uRoomHalfW; uniform float uRoomHalfD;\n' +
+        'varying vec3 vPos; varying vec2 vUv; varying vec3 vWorldPos;\n' +
+        'void main() {\n' +
+        '  if (vWorldPos.y < 0.0) discard;\n' +
+        '  if (abs(vWorldPos.x) > uRoomHalfW) discard;\n' +
+        '  if (abs(vWorldPos.z) > uRoomHalfD) discard;\n' +
+        '  float fade = smoothstep(0.0, 0.12, vUv.y) * (1.0 - smoothstep(0.5, 1.0, vUv.y));\n' +
+        '  float edge = 1.0 - smoothstep(0.25, 0.5, abs(vUv.x - 0.5));\n' +
+        '  float alpha = fade * edge * uIntensity * 0.35;\n' +
+        '  alpha *= 0.92 + 0.08 * sin(vPos.y * 6.0 + uTime * 1.5);\n' +
+        '  vec3 viewDir = normalize(uCamPos - vWorldPos);\n' +
+        '  float topFade = smoothstep(0.35, 0.92, viewDir.y);\n' +
+        '  alpha *= (1.0 - topFade * 0.94);\n' +
+        '  gl_FragColor = vec4(uColor, alpha);\n' +
+        '}'
+    });
+  }
+
+  function buildBeams() {
+    clearGroup(beamGroup);
+    // re-set position after clear
+    beamGroup.position.set(0, roomH - BODY_DEPTH - 0.01, 0);
+    beams = [];
+
+    // startH = exact distance from center emitter to floor
+    var startH = roomH - BODY_DEPTH - 0.01;
+    if (startH <= 0) return;
+    var halfAngle = THREE.MathUtils.degToRad(diffuserAngle / 2);
+    var centerHalfAngle = THREE.MathUtils.degToRad(centerDiffuserAngle / 2);
+    var tiltRad = THREE.MathUtils.degToRad(beamAngleDeg);
+
+    // Center beam: straight down, stops at floor
+    var topR = 0.04;
+    var botR = topR + startH * Math.tan(centerHalfAngle);
+    var geo = new THREE.CylinderGeometry(topR, botR, startH, 24, 1, true);
+    var mat = createBeamMaterial(centerBeamColor);
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = -startH / 2;
+    beamGroup.add(mesh);
+    beams.push({ mesh: mesh, mat: mat });
+
+    var spot = new THREE.Mesh(
+      new THREE.CircleGeometry(Math.max(botR, 0.08), 32),
+      new THREE.MeshBasicMaterial({ color: centerBeamColor, transparent: true, opacity: 0.22, clippingPlanes: buildRoomClipPlanes() })
+    );
+    spot.rotation.x = -Math.PI / 2;
+    spot.position.y = -startH + 0.01;
+    beamGroup.add(spot);
+
+    // Outer beams: originate from emitter slit on each face of the N-gon puck
+    var panelStartH = outerBeamStartH; // roomH - BODY_DEPTH
+    var panelOffsetY = panelStartH - startH; // height offset in beamGroup local space
+    for (var i = 0; i < outerCount; i++) {
+      var azimuth = (i / outerCount) * Math.PI * 2;
+      var oColor = outerBeamColor(i);
+      var oTopR = 0.04;
+      var len = panelStartH / Math.cos(tiltRad);
+      var oBotR = oTopR + len * Math.tan(halfAngle);
+      var oGeo = new THREE.CylinderGeometry(oTopR, oBotR, len, 24, 1, true);
+      var oMat = createBeamMaterial(oColor);
+      var oMesh = new THREE.Mesh(oGeo, oMat);
+
+      var pivot = new THREE.Group();
+      pivot.position.set(Math.cos(azimuth) * outerBeamRadius, panelOffsetY, Math.sin(azimuth) * outerBeamRadius);
+      pivot.rotation.z = tiltRad;
+      pivot.rotation.y = -azimuth;
+      oMesh.position.y = -len / 2;
+      pivot.add(oMesh);
+      beamGroup.add(pivot);
+      beams.push({ mesh: oMesh, mat: oMat });
+
+      // Floor footprint: tilted cone ∩ horizontal floor = ellipse
+      // Minor axis (tangential): oBotR  Major axis (radial): oBotR / cos(tiltRad)
+      var hitDist = outerBeamRadius + panelStartH * Math.tan(tiltRad);
+      var semiMinor = Math.max(oBotR, 0.04);
+      var semiMajor = tiltRad > 0 ? Math.max(oBotR / Math.cos(tiltRad), 0.04) : semiMinor;
+      var ecurve = new THREE.EllipseCurve(0, 0, semiMajor, semiMinor, 0, Math.PI * 2, false, -azimuth);
+      var eshape = new THREE.Shape(ecurve.getPoints(48));
+      var oSpot = new THREE.Mesh(
+        new THREE.ShapeGeometry(eshape),
+        new THREE.MeshBasicMaterial({ color: oColor, transparent: true, opacity: 0.18, side: THREE.DoubleSide, clippingPlanes: buildRoomClipPlanes() })
+      );
+      oSpot.rotation.x = -Math.PI / 2;
+      oSpot.position.set(Math.cos(azimuth) * hitDist, -startH + 0.01, Math.sin(azimuth) * hitDist);
+      beamGroup.add(oSpot);
+    }
+
+    // Middle beams: inner ring, independent tilt + diffuser
+    var midTiltRad = THREE.MathUtils.degToRad(midBeamAngleDeg);
+    var midHalfAngle = THREE.MathUtils.degToRad(midDiffuserAngle / 2);
+    var midRingRadius = outerBeamRadius * MID_RING_FRAC;
+    for (var mi = 0; mi < midBeamCount; mi++) {
+      var maz = (mi / midBeamCount) * Math.PI * 2;
+      var mColor = midBeamColor(mi);
+      var mTopR = 0.03;
+      var mCosT = Math.cos(midTiltRad);
+      var mLen = mCosT > 0.001 ? panelStartH / mCosT : panelStartH;
+      var mBotR = mTopR + mLen * Math.tan(midHalfAngle);
+      var mGeo = new THREE.CylinderGeometry(mTopR, mBotR, mLen, 24, 1, true);
+      var mMat = createBeamMaterial(mColor);
+      var mMesh = new THREE.Mesh(mGeo, mMat);
+      var mPivot = new THREE.Group();
+      mPivot.position.set(Math.cos(maz) * midRingRadius, panelOffsetY, Math.sin(maz) * midRingRadius);
+      mPivot.rotation.z = midTiltRad;
+      mPivot.rotation.y = -maz;
+      mMesh.position.y = -mLen / 2;
+      mPivot.add(mMesh);
+      beamGroup.add(mPivot);
+      beams.push({ mesh: mMesh, mat: mMat });
+
+      var mHitDist = midRingRadius + panelStartH * Math.tan(midTiltRad);
+      var mSemiMin = Math.max(mBotR, 0.04);
+      var mSemiMaj = midTiltRad > 0 ? Math.max(mBotR / mCosT, 0.04) : mSemiMin;
+      var mCurve = new THREE.EllipseCurve(0, 0, mSemiMaj, mSemiMin, 0, Math.PI * 2, false, -maz);
+      var mShape = new THREE.Shape(mCurve.getPoints(48));
+      var mSpot = new THREE.Mesh(
+        new THREE.ShapeGeometry(mShape),
+        new THREE.MeshBasicMaterial({ color: mColor, transparent: true, opacity: 0.18, side: THREE.DoubleSide, clippingPlanes: buildRoomClipPlanes() })
+      );
+      mSpot.rotation.x = -Math.PI / 2;
+      mSpot.position.set(Math.cos(maz) * mHitDist, -startH + 0.01, Math.sin(maz) * mHitDist);
+      beamGroup.add(mSpot);
+    }
+
+    // Point lights
+    var cl = new THREE.PointLight(0x3366cc, 1.5, roomH * 2);
+    cl.position.y = -1;
+    beamGroup.add(cl);
+
+    for (var li = 0; li < outerCount; li++) {
+      var az = (li / outerCount) * Math.PI * 2;
+      var hd = outerBeamRadius + panelStartH * Math.tan(tiltRad);
+      var pl = new THREE.PointLight(outerBeamColor(li), 1.0, roomH * 1.5);
+      pl.position.set(Math.cos(az) * hd * 0.5, -startH * 0.5, Math.sin(az) * hd * 0.5);
+      beamGroup.add(pl);
+    }
+    computeCoverage();
+  }
+
+  // ---- Coverage + 2D floor plan ----
+
+  // Generate n-point polygon approximating an ellipse in the XZ floor plane
+  function ellipsePoly(cx, cz, semiMajor, semiMinor, az, n) {
+    var pts = [];
+    var cosA = Math.cos(az), sinA = Math.sin(az);
+    for (var i = 0; i < n; i++) {
+      var t = (i / n) * Math.PI * 2;
+      var lx = semiMajor * Math.cos(t);
+      var lz = semiMinor * Math.sin(t);
+      pts.push({ x: cx + lx * cosA - lz * sinA, z: cz + lx * sinA + lz * cosA });
+    }
+    return pts;
+  }
+
+  // Sutherland-Hodgman clip against one half-plane: ax*x + az*z <= d
+  function shClipHalfPlane(pts, ax, azCoef, d) {
+    if (pts.length === 0) return [];
+    var out = [], n = pts.length;
+    for (var i = 0; i < n; i++) {
+      var cur = pts[i], prv = pts[(i - 1 + n) % n];
+      var curIn = ax * cur.x + azCoef * cur.z <= d;
+      var prvIn = ax * prv.x + azCoef * prv.z <= d;
+      if (curIn) {
+        if (!prvIn) {
+          var denom = ax * (cur.x - prv.x) + azCoef * (cur.z - prv.z);
+          var t = (d - ax * prv.x - azCoef * prv.z) / denom;
+          out.push({ x: prv.x + t * (cur.x - prv.x), z: prv.z + t * (cur.z - prv.z) });
+        }
+        out.push(cur);
+      } else if (prvIn) {
+        var denom2 = ax * (cur.x - prv.x) + azCoef * (cur.z - prv.z);
+        var t2 = (d - ax * prv.x - azCoef * prv.z) / denom2;
+        out.push({ x: prv.x + t2 * (cur.x - prv.x), z: prv.z + t2 * (cur.z - prv.z) });
+      }
+    }
+    return out;
+  }
+
+  // Clip polygon to room rectangle
+  function clipToRoom(pts) {
+    var hw = roomW / 2, hd = roomD / 2;
+    pts = shClipHalfPlane(pts,  1,  0,  hw);
+    pts = shClipHalfPlane(pts, -1,  0,  hw);
+    pts = shClipHalfPlane(pts,  0,  1,  hd);
+    pts = shClipHalfPlane(pts,  0, -1,  hd);
+    return pts;
+  }
+
+  // Compute beam footprint polygons at a given height above floor (0 = floor)
+  function computeFootprints(planeHeight) {
+    planeHeight = planeHeight || 0;
+    var fps = [];
+    var H_eff = roomH - BODY_DEPTH - 0.01 - planeHeight;
+    if (H_eff <= 0) return fps;
+    var tiltRad    = THREE.MathUtils.degToRad(beamAngleDeg);
+    var halfAngle  = THREE.MathUtils.degToRad(diffuserAngle / 2);
+    var cHalfAngle = THREE.MathUtils.degToRad(centerDiffuserAngle / 2);
+
+    // Center beam: vertical cone, circular footprint
+    var botR = 0.04 + H_eff * Math.tan(cHalfAngle);
+    var cPts = clipToRoom(ellipsePoly(0, 0, botR, botR, 0, 128));
+    fps.push({ pts: cPts, color: '#3388dd' });
+
+    // Outer beams: tilted cones, elliptical footprints
+    var panelH = roomH - BODY_DEPTH - planeHeight;
+    if (panelH > 0 && outerCount > 0) {
+      var cosT = Math.cos(tiltRad);
+      var len   = cosT > 0.001 ? panelH / cosT : panelH;
+      var oBotR = 0.04 + len * Math.tan(halfAngle);
+      var hitDist  = outerBeamRadius + panelH * Math.tan(tiltRad);
+      var semiMaj  = cosT > 0.001 ? oBotR / cosT : oBotR;
+      var semiMin  = oBotR;
+      for (var i = 0; i < outerCount; i++) {
+        var az  = (i / outerCount) * Math.PI * 2;
+        var cx  = Math.cos(az) * hitDist;
+        var cz  = Math.sin(az) * hitDist;
+        var pts = clipToRoom(ellipsePoly(cx, cz, semiMaj, semiMin, az, 128));
+        var hue = 0.575 + (outerCount > 1 ? (i / outerCount) * 0.1 : 0);
+        var col = new THREE.Color().setHSL(hue, 0.65, 0.55);
+        fps.push({ pts: pts, color: '#' + col.getHexString() });
+      }
+    }
+    // Middle beams: inner ring
+    if (panelH > 0 && midBeamCount > 0) {
+      var mTiltRad = THREE.MathUtils.degToRad(midBeamAngleDeg);
+      var mHalfA   = THREE.MathUtils.degToRad(midDiffuserAngle / 2);
+      var mRingR   = outerBeamRadius * MID_RING_FRAC;
+      var mCosT    = Math.cos(mTiltRad);
+      var mLen2    = mCosT > 0.001 ? panelH / mCosT : panelH;
+      var mBotR2   = 0.03 + mLen2 * Math.tan(mHalfA);
+      var mHit2    = mRingR + panelH * Math.tan(mTiltRad);
+      var mSemiMaj2 = mCosT > 0.001 ? mBotR2 / mCosT : mBotR2;
+      var mSemiMin2 = mBotR2;
+      for (var mi = 0; mi < midBeamCount; mi++) {
+        var maz2 = (mi / midBeamCount) * Math.PI * 2;
+        var mpts = clipToRoom(ellipsePoly(Math.cos(maz2) * mHit2, Math.sin(maz2) * mHit2, mSemiMaj2, mSemiMin2, maz2, 128));
+        var mhue = 0.07 + (midBeamCount > 1 ? (mi / midBeamCount) * 0.06 : 0);
+        fps.push({ pts: mpts, color: '#' + new THREE.Color().setHSL(mhue, 0.75, 0.55).getHexString() });
+      }
+    }
+    return fps;
+  }
+
+  // Parse '#rrggbb' → 'rgba(r,g,b,alpha)'
+  function hexToRgba(hex, alpha) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  // Draw polygon pts onto ctx using current fill/stroke style
+  function drawPoly(ctx, pts, scaleX, scaleZ, offX, offZ) {
+    if (pts.length < 3) return;
+    ctx.beginPath();
+    ctx.moveTo(offX + pts[0].x * scaleX, offZ + pts[0].z * scaleZ);
+    for (var i = 1; i < pts.length; i++) {
+      ctx.lineTo(offX + pts[i].x * scaleX, offZ + pts[i].z * scaleZ);
+    }
+    ctx.closePath();
+  }
+
+  // Compute floor coverage using off-screen canvas polygon rendering
+  function computeCoverage() {
+    var maxPx = 1500;
+    var res   = Math.max(roomW, roomD) / maxPx;          // m per pixel
+    var W     = Math.ceil(roomW / res);
+    var H     = Math.ceil(roomD / res);
+    var offscreen = document.createElement('canvas');
+    offscreen.width = W; offscreen.height = H;
+    var ctx = offscreen.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+
+    var activeHeight = usePlaneZ ? planeZ : 0;
+    var fps = computeFootprints(activeHeight);
+    // Mapping: world (0,0) → canvas center
+    var scaleX =  W / roomW;
+    var scaleZ =  H / roomD;
+    var offX   =  W / 2;
+    var offZ   =  H / 2;
+
+    for (var fi = 0; fi < fps.length; fi++) {
+      drawPoly(ctx, fps[fi].pts, scaleX, scaleZ, offX, offZ);
+      ctx.fill();
+    }
+
+    var data = ctx.getImageData(0, 0, W, H).data;
+    var lit  = 0;
+    for (var p = 0; p < data.length; p += 4) { if (data[p] > 128) lit++; }
+    coverageM2  = lit * res * res;
+    coveragePct = (coverageM2 / (roomW * roomD)) * 100;
+
+    var el1 = document.getElementById('covM2');
+    var el2 = document.getElementById('covPct');
+    if (el1) el1.textContent = coverageM2.toFixed(2);
+    if (el2) el2.textContent = Math.min(coveragePct, 100).toFixed(1);
+    var lblEl = document.getElementById('coverageLabel');
+    if (lblEl) lblEl.textContent = usePlaneZ
+      ? "Plane of Interest (Z' = " + planeZ.toFixed(1) + ' m) Coverage'
+      : 'Floor Coverage';
+    if (splitMode) {
+      render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    }
+    if (measurePoint) { updateMeasureViz(); }
+  }
+
+  // Render the 2D floor plan to canvas2D, at given height above floor
+  function render2DFloor(planeHeight, targetCanvas) {
+    planeHeight = planeHeight || 0;
+    var canvas = targetCanvas || document.getElementById('canvas2D');
+    if (!canvas) return;
+    var W = canvas.width, H = canvas.height;
+    var ctx = canvas.getContext('2d');
+
+    var margin = 36;
+    var drawW  = W - margin * 2;
+    var drawH  = H - margin * 2;
+    var scale  = Math.min(drawW / roomW, drawH / roomD);
+    var offX   = margin + (drawW - roomW * scale) / 2 + roomW * scale / 2;
+    var offZ   = margin + (drawH - roomD * scale) / 2 + roomD * scale / 2;
+    // Store layout for click-to-measure coordinate inversion
+    if (canvas.id) canvas2DLayouts[canvas.id] = { offX: offX, offZ: offZ, scale: scale };
+
+    function cx(wx) { return offX + wx * scale; }
+    function cz(wz) { return offZ + wz * scale; }
+
+    // Background + room fill
+    ctx.fillStyle = '#e8eaf0';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#f9f9fc';
+    ctx.fillRect(cx(-roomW/2), cz(-roomD/2), roomW * scale, roomD * scale);
+
+    // 1m grid
+    ctx.strokeStyle = 'rgba(100,110,140,0.25)';
+    ctx.lineWidth = 0.8;
+    for (var gx = Math.ceil(-roomW/2); gx <= Math.floor(roomW/2); gx++) {
+      ctx.beginPath(); ctx.moveTo(cx(gx), cz(-roomD/2)); ctx.lineTo(cx(gx), cz(roomD/2)); ctx.stroke();
+    }
+    for (var gz = Math.ceil(-roomD/2); gz <= Math.floor(roomD/2); gz++) {
+      ctx.beginPath(); ctx.moveTo(cx(-roomW/2), cz(gz)); ctx.lineTo(cx(roomW/2), cz(gz)); ctx.stroke();
+    }
+
+    // Beam footprints
+    var fps = computeFootprints(planeHeight);
+    for (var fi = 0; fi < fps.length; fi++) {
+      var fp = fps[fi];
+      drawPoly(ctx, fp.pts, scale, scale, offX, offZ);
+      ctx.fillStyle = hexToRgba(fp.color, 0.32);
+      ctx.fill();
+      ctx.strokeStyle = hexToRgba(fp.color, 0.85);
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    // Room border
+    ctx.strokeStyle = '#334455';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cx(-roomW/2), cz(-roomD/2), roomW * scale, roomD * scale);
+
+    // Axis lines
+    ctx.strokeStyle = 'rgba(200,50,50,0.5)';  ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx(-roomW/2), cz(0)); ctx.lineTo(cx(roomW/2), cz(0)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(50,140,50,0.5)';
+    ctx.beginPath(); ctx.moveTo(cx(0), cz(-roomD/2)); ctx.lineTo(cx(0), cz(roomD/2)); ctx.stroke();
+
+    // Transmitter marker
+    ctx.fillStyle = '#2e2e3a';
+    ctx.beginPath(); ctx.arc(cx(0), cz(0), 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx(0), cz(0), 3, 0, Math.PI * 2); ctx.fill();
+
+    // Dimension labels
+    ctx.fillStyle = '#556';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('X:  ' + roomW + ' m', W / 2, cz(roomD/2) + 20);
+    ctx.textAlign = 'right';
+    ctx.save(); ctx.translate(cx(-roomW/2) - 4, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Y: ' + roomD + ' m', 0, 0);
+    ctx.restore();
+
+    // Coverage + height label
+    var heightLabel = planeHeight > 0 ? ' at ' + planeHeight.toFixed(2) + ' m' : ' (floor)';
+    ctx.fillStyle = '#223';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      'Coverage' + heightLabel + ':  ' + coverageM2.toFixed(2) + ' m\u00B2  (' + Math.min(coveragePct, 100).toFixed(1) + '%)',
+      cx(-roomW/2), cz(-roomD/2) - 10
+    );
+
+    var infoEl = document.getElementById('canvas2DInfo');
+    if (infoEl) infoEl.textContent = 'Room: X=' + roomW + ' m  Y=' + roomD + ' m  Z=' + roomH + ' m  |  WiRays\u00AE unit at ceiling center';
+
+    // Measure point overlay
+    if (measurePoint) {
+      var mx = measurePoint.wx, mz = measurePoint.wz;
+      var mpx = cx(mx), mpz = cz(mz);
+      // H line: AP center to clicked point (dashed green)
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#338833'; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(cx(0), cz(0)); ctx.lineTo(mpx, mpz); ctx.stroke();
+      ctx.setLineDash([]);
+      // Crosshair
+      ctx.strokeStyle = '#2266cc'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mpx - 9, mpz); ctx.lineTo(mpx + 9, mpz);
+      ctx.moveTo(mpx, mpz - 9); ctx.lineTo(mpx, mpz + 9);
+      ctx.stroke();
+      // Point dot
+      ctx.fillStyle = '#2266cc';
+      ctx.beginPath(); ctx.arc(mpx, mpz, 4, 0, Math.PI * 2); ctx.fill();
+      // H label
+      ctx.fillStyle = '#338833'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('H', (cx(0) + mpx) / 2 + 5, (cz(0) + mpz) / 2 - 6);
+    }
+  }
+
+  // ---- Click-to-measure ----
+
+  // Draw right-triangle profile diagram on a small canvas
+  function drawTriangle(cv, H, V, S, theta) {
+    var W = cv.width, Ht = cv.height;
+    var ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, W, Ht);
+    var mL = 20, mT = 14, mR = 14, mB = 18;
+    var drawW = W - mL - mR, drawH = Ht - mT - mB;
+    var sc = Math.min(drawW / H, drawH / V);
+    var triW = H * sc, triH = V * sc;
+    // Vertices: AP top-left, right-angle bottom-left, receiver bottom-right
+    var ap   = { x: mL,          y: mT };
+    var proj = { x: mL,          y: mT + triH };
+    var recv = { x: mL + triW,   y: mT + triH };
+    // V: dashed orange
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = '#cc5500'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ap.x, ap.y); ctx.lineTo(proj.x, proj.y); ctx.stroke();
+    // H: dashed green
+    ctx.strokeStyle = '#338833';
+    ctx.beginPath(); ctx.moveTo(proj.x, proj.y); ctx.lineTo(recv.x, recv.y); ctx.stroke();
+    // S: solid blue
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#2266cc'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ap.x, ap.y); ctx.lineTo(recv.x, recv.y); ctx.stroke();
+    // Right-angle marker at proj
+    var ra = 6;
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(proj.x + ra, proj.y);
+    ctx.lineTo(proj.x + ra, proj.y - ra);
+    ctx.lineTo(proj.x,      proj.y - ra);
+    ctx.stroke();
+    // θ arc at recv
+    var arcR = 11;
+    var angToAP = Math.atan2(ap.y - recv.y, ap.x - recv.x);
+    ctx.strokeStyle = '#884400'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(recv.x, recv.y, arcR, Math.PI, angToAP, true);
+    ctx.stroke();
+    // Labels
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillStyle = '#cc5500'; ctx.textAlign = 'right';
+    ctx.fillText('V', proj.x - 3, (ap.y + proj.y) / 2 + 4);
+    ctx.fillStyle = '#338833'; ctx.textAlign = 'center';
+    ctx.fillText('H', (proj.x + recv.x) / 2, recv.y + 13);
+    ctx.fillStyle = '#2266cc'; ctx.textAlign = 'left';
+    ctx.fillText('S', (ap.x + recv.x) / 2 + 4, (ap.y + recv.y) / 2 - 3);
+    ctx.fillStyle = '#884400'; ctx.textAlign = 'right';
+    ctx.fillText('\u03B8', recv.x - arcR - 2, recv.y - 3);
+    // AP dot
+    ctx.fillStyle = '#2e2e3a';
+    ctx.beginPath(); ctx.arc(ap.x, ap.y, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '9px sans-serif'; ctx.fillStyle = '#445'; ctx.textAlign = 'left';
+    ctx.fillText('AP', ap.x + 4, ap.y + 8);
+    // Recv dot
+    ctx.fillStyle = '#2266cc';
+    ctx.beginPath(); ctx.arc(recv.x, recv.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Build 3D triangle in scene
+  function build3DMeasure(wx, wz) {
+    clearGroup(measureGroup);
+    var apY    = roomH;
+    var recvY  = usePlaneZ ? planeZ : 0;
+    var projY  = recvY; // right-angle vertex is directly below AP at receiver height
+    // S: solid blue — AP to receiver
+    var sGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, apY, 0), new THREE.Vector3(wx, recvY, wz)
+    ]);
+    measureGroup.add(new THREE.Line(sGeo, new THREE.LineBasicMaterial({ color: 0x2266cc })));
+    // V: dashed orange — AP straight down to Z' plane
+    var vGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, apY, 0), new THREE.Vector3(0, projY, 0)
+    ]);
+    var vLine = new THREE.Line(vGeo, new THREE.LineDashedMaterial({ color: 0xcc5500, dashSize: 0.14, gapSize: 0.07 }));
+    vLine.computeLineDistances();
+    measureGroup.add(vLine);
+    // H: dashed green — below-AP to receiver, on Z' plane
+    var hGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, projY, 0), new THREE.Vector3(wx, recvY, wz)
+    ]);
+    var hLine = new THREE.Line(hGeo, new THREE.LineDashedMaterial({ color: 0x338833, dashSize: 0.14, gapSize: 0.07 }));
+    hLine.computeLineDistances();
+    measureGroup.add(hLine);
+    // Receiver sphere
+    var recvSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0x2266cc })
+    );
+    recvSphere.position.set(wx, recvY, wz);
+    measureGroup.add(recvSphere);
+    // Right-angle vertex marker
+    var projSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x888888 })
+    );
+    projSphere.position.set(0, projY, 0);
+    measureGroup.add(projSphere);
+    // Small right-angle bracket at proj
+    var raS = Math.min(0.18, Math.sqrt(wx*wx+wz*wz) * 0.12);
+    var dir = new THREE.Vector3(wx, 0, wz).normalize();
+    var raGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(dir.x*raS, projY,      dir.z*raS),
+      new THREE.Vector3(dir.x*raS, projY+raS,  dir.z*raS),
+      new THREE.Vector3(0,         projY+raS,  0)
+    ]);
+    measureGroup.add(new THREE.Line(raGeo, new THREE.LineBasicMaterial({ color: 0x999999 })));
+  }
+
+  // Update measure info boxes
+  function updateMeasureViz() {
+    if (!measurePoint) {
+      clearGroup(measureGroup);
+      document.getElementById('measureBox').style.display = 'none';
+      document.getElementById('measureBoxModal').style.display = 'none';
+      if (splitMode) render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+      return;
+    }
+    var wx = measurePoint.wx, wz = measurePoint.wz;
+    var Hd = Math.sqrt(wx*wx + wz*wz);
+    var Vd = roomH - (usePlaneZ ? planeZ : 0);
+    var Sd = Math.sqrt(Hd*Hd + Vd*Vd);
+    var theta = Math.atan2(Vd, Hd) * 180 / Math.PI;
+    build3DMeasure(wx, wz);
+    var valsHtml =
+      '<span style="color:#338833;font-weight:700;">H</span> = ' + Hd.toFixed(2) + ' m<br>' +
+      '<span style="color:#cc5500;font-weight:700;">V</span> = ' + Vd.toFixed(2) + ' m<br>' +
+      '<span style="color:#2266cc;font-weight:700;">S</span> = ' + Sd.toFixed(2) + ' m<br>' +
+      '<span style="color:#884400;font-weight:700;">\u03B8</span> = ' + theta.toFixed(1) + '\u00B0';
+    [['measureBox','measureTriCanvas','measureVals'],
+     ['measureBoxModal','measureTriCanvasModal','measureValsModal']].forEach(function(ids) {
+      var box = document.getElementById(ids[0]);
+      if (!box) return;
+      box.style.display = 'block';
+      var tc = document.getElementById(ids[1]);
+      if (tc) drawTriangle(tc, Hd, Vd, Sd, theta);
+      var vEl = document.getElementById(ids[2]);
+      if (vEl) vEl.innerHTML = valsHtml;
+    });
+  }
+
+  // Handle click on a 2D canvas
+  function handleCanvas2DClick(e, canvas) {
+    var layout = canvas2DLayouts[canvas.id];
+    if (!layout) return;
+    var rect = canvas.getBoundingClientRect();
+    var scX = canvas.width / rect.width;
+    var scZ = canvas.height / rect.height;
+    var px = (e.clientX - rect.left) * scX;
+    var pz = (e.clientY - rect.top)  * scZ;
+    var wx = (px - layout.offX) / layout.scale;
+    var wz = (pz - layout.offZ) / layout.scale;
+    // Click outside room → clear
+    if (Math.abs(wx) > roomW / 2 + 0.3 || Math.abs(wz) > roomD / 2 + 0.3) {
+      measurePoint = null;
+    } else {
+      wx = Math.max(-roomW/2, Math.min(roomW/2, wx));
+      wz = Math.max(-roomD/2, Math.min(roomD/2, wz));
+      measurePoint = { wx: wx, wz: wz };
+    }
+    updateMeasureViz();
+    render2DFloor(usePlaneZ ? planeZ : 0, canvas);
+    // Keep both canvases in sync if both are visible
+    var other = canvas.id === 'canvas2DSplit'
+      ? document.getElementById('canvas2D')
+      : document.getElementById('canvas2DSplit');
+    if (other && other.width > 0 && other.offsetParent !== null) {
+      render2DFloor(usePlaneZ ? planeZ : 0, other);
+    }
+  }
+
+  // ---- Init ----
+  rebuildScene();
+  setSplitMode(true);
+
+  // ---- UI ----
+  var roomXInput = document.getElementById('roomX');
+  var roomYInput = document.getElementById('roomY');
+  var roomZInput = document.getElementById('roomZ');
+
+  document.getElementById('applyBtn').addEventListener('click', function() {
+    roomW = parseFloat(roomXInput.value) || 8;
+    roomD = parseFloat(roomYInput.value) || 8;
+    roomH = parseFloat(roomZInput.value) || 3;
+    roomW = Math.max(2, Math.min(40, roomW));
+    roomH = Math.max(2, Math.min(12, roomH));
+    roomD = Math.max(2, Math.min(40, roomD));
+    planeZ = Math.max(0, Math.min(roomH - 0.01, planeZ));
+    document.getElementById('planeZInput').value = planeZ;
+    rebuildScene();
+  });
+
+  [roomXInput, roomYInput, roomZInput].forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('applyBtn').click();
+    });
+  });
+
+  var angleSlider      = document.getElementById('angleSlider');
+  var widthSlider       = document.getElementById('widthSlider');
+  var centerWidthSlider = document.getElementById('centerWidthSlider');
+  var intensitySlider  = document.getElementById('intensitySlider');
+  var outerCountSlider = document.getElementById('outerCountSlider');
+  var angleVal      = document.getElementById('angleVal');
+  var widthVal       = document.getElementById('widthVal');
+  var centerWidthVal = document.getElementById('centerWidthVal');
+  var intensityVal  = document.getElementById('intensityVal');
+  var outerCountVal = document.getElementById('outerCountVal');
+
+  document.getElementById('centerWidthSlider').addEventListener('input', function() {
+    centerDiffuserAngle = +this.value;
+    centerWidthVal.textContent = centerDiffuserAngle + '\u00B0';
+    buildBeams();
+  });
+  document.getElementById('midCountSlider').addEventListener('input', function() {
+    midBeamCount = +this.value;
+    document.getElementById('midCountVal').textContent = midBeamCount;
+    rebuildScene();
+  });
+  document.getElementById('midAngleSlider').addEventListener('input', function() {
+    midBeamAngleDeg = +this.value;
+    document.getElementById('midAngleVal').textContent = midBeamAngleDeg + '\u00B0';
+    buildBeams();
+  });
+  document.getElementById('midWidthSlider').addEventListener('input', function() {
+    midDiffuserAngle = +this.value;
+    document.getElementById('midWidthVal').textContent = midDiffuserAngle + '\u00B0';
+    buildBeams();
+  });
+  angleSlider.addEventListener('input', function() {
+    beamAngleDeg = +angleSlider.value;
+    angleVal.textContent = beamAngleDeg + '\u00B0';
+    buildBeams();
+  });
+  widthSlider.addEventListener('input', function() {
+    diffuserAngle = +widthSlider.value;
+    widthVal.textContent = diffuserAngle + '\u00B0';
+    buildBeams();
+  });
+  outerCountSlider.addEventListener('input', function() {
+    outerCount = +outerCountSlider.value;
+    outerCountVal.textContent = outerCount;
+    rebuildScene();
+  });
+  intensitySlider.addEventListener('input', function() {
+    beamIntensity = +intensitySlider.value / 100;
+    intensityVal.textContent = intensitySlider.value + '%';
+    beams.forEach(function(b) { b.mat.uniforms.uIntensity.value = beamIntensity; });
+  });
+
+  var gridIntensitySlider = document.getElementById('gridIntensitySlider');
+  var gridIntensityVal    = document.getElementById('gridIntensityVal');
+  gridIntensitySlider.addEventListener('input', function() {
+    gridIntensity = +gridIntensitySlider.value / 100;
+    gridIntensityVal.textContent = gridIntensitySlider.value + '%';
+    if (gridObj) {
+      if (Array.isArray(gridObj.material)) {
+        gridObj.material.forEach(function(m) { m.opacity = gridIntensity; });
+      } else {
+        gridObj.material.opacity = gridIntensity;
+      }
+    }
+  });
+
+  document.getElementById('planeIntensitySlider').addEventListener('input', function() {
+    planeZIntensity = +this.value / 100;
+    document.getElementById('planeIntensityVal').textContent = this.value + '%';
+    planeIntensityMats.forEach(function(m) { m.opacity = planeZIntensity; });
+  });
+
+  document.getElementById('axesToggle').addEventListener('change', function() {
+    axesHighlight = this.checked;
+    axisLineObjs.forEach(function(l) { l.visible = axesHighlight; });
+  });
+
+  document.getElementById('planeZInput').addEventListener('change', function() {
+    planeZ = Math.max(0, Math.min(roomH - 0.01, parseFloat(this.value) || 0));
+    this.value = planeZ;
+    buildPlaneOfInterest();
+    computeCoverage();
+  });
+
+  document.getElementById('planeZToggle').addEventListener('change', function() {
+    usePlaneZ = this.checked;
+    buildPlaneOfInterest();
+    computeCoverage();
+  });
+
+  document.getElementById('coverageBtn').addEventListener('click', function() {
+    setSplitMode(!splitMode);
+  });
+  document.getElementById('expandCoverage').addEventListener('click', function() {
+    var modal = document.getElementById('modal2D');
+    modal.style.display = 'flex';
+    render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2D'));
+  });
+  document.getElementById('closeModal2D').addEventListener('click', function() {
+    document.getElementById('modal2D').style.display = 'none';
+  });
+  document.getElementById('modal2D').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+  });
+
+  // ---- Split view ----
+  function resizeSplitCanvas() {
+    var hdr = document.getElementById('splitPaneHeader');
+    var hdrH = hdr ? hdr.offsetHeight : 36;
+    var c = document.getElementById('canvas2DSplit');
+    var w = innerWidth - splitX;
+    var h = innerHeight - TOP_BAR_H - hdrH;
+    c.width = Math.max(w, 1); c.height = Math.max(h, 1);
+  }
+
+  function updateLayout() {
+    var w3d = get3DWidth();
+    var h3d = get3DHeight();
+    camera.aspect = w3d / h3d;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w3d, h3d);
+
+    var hdr3d = document.getElementById('header3D');
+    hdr3d.style.left = PANEL_W + 'px';
+    hdr3d.style.width = w3d + 'px';
+
+    var handle = document.getElementById('dragHandle');
+    var pane = document.getElementById('splitPane');
+    if (splitMode) {
+      handle.style.display = 'block';
+      handle.style.left = splitX + 'px';
+      handle.style.height = (innerHeight - TOP_BAR_H) + 'px';
+      pane.style.top = TOP_BAR_H + 'px';
+      pane.style.left = splitX + 'px';
+      pane.style.right = 'auto';
+      pane.style.width = (innerWidth - splitX) + 'px';
+      pane.style.height = (innerHeight - TOP_BAR_H) + 'px';
+    } else {
+      handle.style.display = 'none';
+    }
+
+    dimLabel.style.left = (PANEL_W + w3d / 2) + 'px';
+  }
+
+  function setSplitMode(on) {
+    splitMode = on;
+    var pane = document.getElementById('splitPane');
+    pane.style.display = on ? 'block' : 'none';
+    document.getElementById('coverageBtn').textContent = on ? 'Hide 2D Coverage' : 'Show 2D Coverage';
+    updateLayout();
+    if (on) {
+      resizeSplitCanvas();
+      render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    }
+  }
+
+  // ---- Animate ----
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+
+    beams.forEach(function(b) { b.mat.uniforms.uTime.value = t; });
+
+    emitterGlow.emissiveIntensity = 0.8 + 0.3 * Math.sin(t * 2.5);
+    ledMat.emissiveIntensity = 1.5 + 0.5 * Math.sin(t * 4);
+
+    orbitControls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  addEventListener('resize', function() {
+    splitX = Math.floor(innerWidth * splitRatio);
+    updateLayout();
+    if (splitMode) {
+      resizeSplitCanvas();
+      render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    }
+  });
+  // ---- Import / Export ----
+  function dataURLtoBlob(dataURL) {
+    var parts = dataURL.split(',');
+    var mime = parts[0].match(/:(.*?);/)[1];
+    var bstr = atob(parts[1]), n = bstr.length, u8 = new Uint8Array(n);
+    while (n--) u8[n] = bstr.charCodeAt(n);
+    return new Blob([u8], { type: mime });
+  }
+
+  // Queue of { filename, blob } waiting to be saved via modal
+  var saveAsQueue = [];
+
+  function triggerDownload(filename, blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function saveAs(filename, blob) {
+    // Capacitor native: write to cache then open share sheet
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      var FS = window.Capacitor.Plugins.Filesystem;
+      var SharePlugin = window.Capacitor.Plugins.Share;
+      var reader = new FileReader();
+      reader.onload = function() {
+        var base64 = reader.result.split(',')[1];
+        FS.writeFile({ path: filename, data: base64, directory: 'CACHE' })
+          .then(function(res) {
+            return SharePlugin.share({ title: filename, url: res.uri, dialogTitle: 'Save ' + filename });
+          })
+          .catch(function(e) { console.error('Capacitor save error', e); });
+      };
+      reader.readAsDataURL(blob);
+    } else if (window.showSaveFilePicker) {
+      var ext = filename.split('.').pop().toLowerCase();
+      var typeMap = {
+        png:  [{ description: 'PNG Image', accept: { 'image/png':        ['.png']  } }],
+        json: [{ description: 'JSON File', accept: { 'application/json': ['.json'] } }]
+      };
+      window.showSaveFilePicker({ suggestedName: filename, types: typeMap[ext] || [] })
+        .then(function(handle) { return handle.createWritable(); })
+        .then(function(writable) { return writable.write(blob).then(function() { return writable; }); })
+        .then(function(writable) { return writable.close(); })
+        .catch(function(e) { if (e.name !== 'AbortError') triggerDownload(filename, blob); });
+    } else {
+      saveAsQueue.push({ filename: filename, blob: blob });
+    }
+  }
+
+  // Show modal with editable filenames for all queued blobs
+  function openSaveAsModal() {
+    if (!saveAsQueue.length) return;
+    var rows = document.getElementById('saveAsRows');
+    rows.innerHTML = '';
+    saveAsQueue.forEach(function(item, i) {
+      var row = document.createElement('div');
+      row.className = 'sa-row';
+      var lbl = document.createElement('label');
+      lbl.textContent = item.blob.type === 'application/json' ? 'Settings filename' :
+                        item.filename.indexOf('2d') !== -1    ? '2D image filename' :
+                                                                '3D image filename';
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.value = item.filename; inp.dataset.idx = i;
+      row.appendChild(lbl); row.appendChild(inp);
+      rows.appendChild(row);
+    });
+    document.getElementById('saveAsModal').classList.add('open');
+  }
+
+  document.getElementById('saveAsConfirm').addEventListener('click', function() {
+    document.querySelectorAll('#saveAsRows input').forEach(function(inp) {
+      var item = saveAsQueue[+inp.dataset.idx];
+      if (item) triggerDownload(inp.value || item.filename, item.blob);
+    });
+    saveAsQueue = [];
+    document.getElementById('saveAsModal').classList.remove('open');
+  });
+  document.getElementById('saveAsCancel').addEventListener('click', function() {
+    saveAsQueue = [];
+    document.getElementById('saveAsModal').classList.remove('open');
+  });
+
+  // Import
+  document.getElementById('importFileBtn').addEventListener('click', function() {
+    document.getElementById('importFileInput').click();
+  });
+  document.getElementById('importFileInput').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var status = document.getElementById('importStatus');
+      try {
+        var d = JSON.parse(e.target.result);
+
+        // Room
+        if (d.room) {
+          if (d.room.widthX  != null) roomW = Math.max(2, Math.min(40, +d.room.widthX));
+          if (d.room.heightZ != null) roomH = Math.max(2, Math.min(12, +d.room.heightZ));
+          if (d.room.depthY  != null) roomD = Math.max(2, Math.min(40, +d.room.depthY));
+          document.getElementById('roomX').value = roomW;
+          document.getElementById('roomY').value = roomD;
+          document.getElementById('roomZ').value = roomH;
+        }
+        // Plane of interest
+        if (d.planeOfInterest) {
+          if (d.planeOfInterest.z != null) {
+            planeZ = Math.max(0, Math.min(roomH - 0.01, +d.planeOfInterest.z));
+            document.getElementById('planeZInput').value = planeZ;
+          }
+          if (d.planeOfInterest.enabled != null) {
+            usePlaneZ = !!d.planeOfInterest.enabled;
+            document.getElementById('planeZToggle').checked = usePlaneZ;
+          }
+        }
+        // Center beam
+        if (d.centerBeam && d.centerBeam.diffuserAngle != null) {
+          centerDiffuserAngle = Math.max(0, Math.min(180, +d.centerBeam.diffuserAngle));
+          document.getElementById('centerWidthSlider').value = centerDiffuserAngle;
+          document.getElementById('centerWidthVal').textContent = centerDiffuserAngle + '\u00B0';
+        }
+        // Middle beams
+        if (d.middleBeams) {
+          if (d.middleBeams.count != null) {
+            midBeamCount = Math.max(0, Math.min(32, Math.round(+d.middleBeams.count)));
+            document.getElementById('midCountSlider').value = midBeamCount;
+            document.getElementById('midCountVal').textContent = midBeamCount;
+          }
+          if (d.middleBeams.angle != null) {
+            midBeamAngleDeg = Math.max(0, Math.min(180, +d.middleBeams.angle));
+            document.getElementById('midAngleSlider').value = midBeamAngleDeg;
+            document.getElementById('midAngleVal').textContent = midBeamAngleDeg + '\u00B0';
+          }
+          if (d.middleBeams.diffuserAngle != null) {
+            midDiffuserAngle = Math.max(0, Math.min(180, +d.middleBeams.diffuserAngle));
+            document.getElementById('midWidthSlider').value = midDiffuserAngle;
+            document.getElementById('midWidthVal').textContent = midDiffuserAngle + '\u00B0';
+          }
+        }
+        // Outer beams
+        if (d.outerBeams) {
+          if (d.outerBeams.count != null) {
+            outerCount = Math.max(0, Math.min(32, Math.round(+d.outerBeams.count)));
+            document.getElementById('outerCountSlider').value = outerCount;
+            document.getElementById('outerCountVal').textContent = outerCount;
+          }
+          if (d.outerBeams.angle != null) {
+            beamAngleDeg = Math.max(0, Math.min(180, +d.outerBeams.angle));
+            document.getElementById('angleSlider').value = beamAngleDeg;
+            document.getElementById('angleVal').textContent = beamAngleDeg + '\u00B0';
+          }
+          if (d.outerBeams.diffuserAngle != null) {
+            diffuserAngle = Math.max(0, Math.min(180, +d.outerBeams.diffuserAngle));
+            document.getElementById('widthSlider').value = diffuserAngle;
+            document.getElementById('widthVal').textContent = diffuserAngle + '\u00B0';
+          }
+        }
+        // Scene
+        if (d.scene) {
+          if (d.scene.beamIntensityPct != null) {
+            beamIntensity = Math.max(0.2, Math.min(1, +d.scene.beamIntensityPct / 100));
+            document.getElementById('intensitySlider').value = Math.round(beamIntensity * 100);
+            document.getElementById('intensityVal').textContent = Math.round(beamIntensity * 100) + '%';
+          }
+          if (d.scene.gridIntensityPct != null) {
+            gridIntensity = Math.max(0, Math.min(1, +d.scene.gridIntensityPct / 100));
+            document.getElementById('gridIntensitySlider').value = Math.round(gridIntensity * 100);
+            document.getElementById('gridIntensityVal').textContent = Math.round(gridIntensity * 100) + '%';
+          }
+          if (d.scene.planeIntensityPct != null) {
+            planeZIntensity = Math.max(0, Math.min(1, +d.scene.planeIntensityPct / 100));
+            document.getElementById('planeIntensitySlider').value = Math.round(planeZIntensity * 100);
+            document.getElementById('planeIntensityVal').textContent = Math.round(planeZIntensity * 100) + '%';
+          }
+          if (d.scene.axesHighlight != null) {
+            axesHighlight = !!d.scene.axesHighlight;
+            document.getElementById('axesToggle').checked = axesHighlight;
+          }
+        }
+
+        rebuildScene();
+        status.style.color = '#339944';
+        status.textContent = '\u2714 Settings loaded';
+        setTimeout(function() { status.textContent = ''; }, 3000);
+      } catch (err) {
+        status.style.color = '#cc3333';
+        status.textContent = '\u2716 Invalid JSON file';
+      }
+    };
+    reader.readAsText(file);
+    this.value = ''; // reset so same file can be re-imported
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function(e) {
+    var dd = document.getElementById('exportDropdown');
+    dd.classList.toggle('open');
+    e.stopPropagation();
+  });
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('exportDropdown').contains(e.target) &&
+        e.target !== document.getElementById('exportBtn')) {
+      document.getElementById('exportDropdown').classList.remove('open');
+    }
+  });
+
+  document.getElementById('exportDoBtn').addEventListener('click', function() {
+    var do2D   = document.getElementById('exp2D').checked;
+    var do3D   = document.getElementById('exp3D').checked;
+    var doData = document.getElementById('expData').checked;
+
+    if (do2D) {
+      var c2d = document.getElementById('canvas2DSplit');
+      var src2d;
+      if (c2d && c2d.width > 0 && c2d.height > 0) {
+        src2d = c2d;
+      } else {
+        src2d = document.createElement('canvas');
+        src2d.width = 900; src2d.height = 700;
+        render2DFloor(usePlaneZ ? planeZ : 0, src2d);
+      }
+      saveAs('coverage_2d.png', dataURLtoBlob(src2d.toDataURL('image/png')));
+    }
+
+    if (do3D) {
+      renderer.render(scene, camera);
+      saveAs('view_3d.png', dataURLtoBlob(renderer.domElement.toDataURL('image/png')));
+    }
+
+    if (doData) {
+      var data = {
+        room: { widthX: roomW, heightZ: roomH, depthY: roomD },
+        planeOfInterest: { z: planeZ, enabled: usePlaneZ },
+        centerBeam: { diffuserAngle: centerDiffuserAngle },
+        middleBeams: { count: midBeamCount, angle: midBeamAngleDeg, diffuserAngle: midDiffuserAngle },
+        outerBeams: { count: outerCount, angle: beamAngleDeg, diffuserAngle: diffuserAngle },
+        scene: {
+          beamIntensityPct: Math.round(beamIntensity * 100),
+          gridIntensityPct: Math.round(gridIntensity * 100),
+          planeIntensityPct: Math.round(planeZIntensity * 100),
+          axesHighlight: axesHighlight
+        },
+        coverage: { m2: +coverageM2.toFixed(3), pct: +Math.min(coveragePct, 100).toFixed(2) }
+      };
+      saveAs('beamvisual_settings.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    }
+
+    document.getElementById('exportDropdown').classList.remove('open');
+    // For browsers without showSaveFilePicker, open the filename modal now
+    if (!window.showSaveFilePicker && saveAsQueue.length) openSaveAsModal();
+  });
+
+  // ---- Click-to-measure handlers ----
+  document.getElementById('canvas2DSplit').addEventListener('click', function(e) {
+    handleCanvas2DClick(e, this);
+  });
+  document.getElementById('canvas2D').addEventListener('click', function(e) {
+    handleCanvas2DClick(e, this);
+  });
+  document.getElementById('measureClearBtn').addEventListener('click', function() {
+    measurePoint = null;
+    updateMeasureViz();
+    if (splitMode) render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+  });
+
+  // ---- Drag handle ----
+  (function() {
+    var handle = document.getElementById('dragHandle');
+    var dragging = false;
+    handle.addEventListener('mousedown', function(e) {
+      dragging = true;
+      handle.classList.add('dragging');
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      var minX = PANEL_W + 120;
+      var maxX = innerWidth - 120;
+      splitX = Math.max(minX, Math.min(maxX, e.clientX));
+      splitRatio = splitX / innerWidth;
+      updateLayout();
+      resizeSplitCanvas();
+      render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    });
+    document.addEventListener('mouseup', function() {
+      if (dragging) { dragging = false; handle.classList.remove('dragging'); }
+    });
+  }());
+
+})();
+</script>
+</body>
+</html>
