@@ -319,19 +319,19 @@
   <div id="secRoom">
     <div class="field">
       <label>Width (X)</label>
-      <div class="row"><input type="number" id="roomX" value="10" min="0" max="40" step="0.5"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomX" value="10" min="0" max="9999" step="0.5"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Depth (Y)</label>
-      <div class="row"><input type="number" id="roomY" value="10" min="0" max="40" step="0.5"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomY" value="10" min="0" max="9999" step="0.5"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Height (Z)</label>
-      <div class="row"><input type="number" id="roomZ" value="3" min="0" max="12" step="0.25"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomZ" value="3" min="0" max="9999" step="0.25"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Plane of Interest (Z')</label>
-      <div class="row"><input type="number" id="planeZInput" value="1.5" min="0" max="11" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="planeZInput" value="1.5" min="0" max="9999" step="0.1"><span class="unit">m</span></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
       <input type="checkbox" id="planeZToggle" checked style="cursor:pointer;">
@@ -1608,9 +1608,9 @@ window.toggleSection = function(id, hdr) {
     roomW = isNaN(parseFloat(roomXInput.value)) ? 8 : parseFloat(roomXInput.value);
     roomD = isNaN(parseFloat(roomYInput.value)) ? 8 : parseFloat(roomYInput.value);
     roomH = isNaN(parseFloat(roomZInput.value)) ? 3 : parseFloat(roomZInput.value);
-    roomW = Math.max(0, Math.min(40, roomW));
-    roomH = Math.max(0, Math.min(12, roomH));
-    roomD = Math.max(0, Math.min(40, roomD));
+    roomW = Math.max(0, roomW);
+    roomH = Math.max(0, roomH);
+    roomD = Math.max(0, roomD);
     planeZ = Math.max(0, Math.min(roomH - 0.01, planeZ));
     document.getElementById('planeZInput').value = planeZ;
     rebuildScene();
@@ -1997,9 +1997,9 @@ window.toggleSection = function(id, hdr) {
 
         // Room
         if (d.room) {
-          if (d.room.widthX  != null) roomW = Math.max(2, Math.min(40, +d.room.widthX));
-          if (d.room.heightZ != null) roomH = Math.max(2, Math.min(12, +d.room.heightZ));
-          if (d.room.depthY  != null) roomD = Math.max(2, Math.min(40, +d.room.depthY));
+          if (d.room.widthX  != null) roomW = Math.max(0, +d.room.widthX);
+          if (d.room.heightZ != null) roomH = Math.max(0, +d.room.heightZ);
+          if (d.room.depthY  != null) roomD = Math.max(0, +d.room.depthY);
           document.getElementById('roomX').value = roomW;
           document.getElementById('roomY').value = roomD;
           document.getElementById('roomZ').value = roomH;
