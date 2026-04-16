@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5.0">
 <title>WiRays&#174; Coverage</title>
 <link rel="icon" type="image/png" href="./favicon.png">
 <link rel="apple-touch-icon" href="./favicon.png">
@@ -578,12 +578,27 @@ window.toggleSection = function(id, hdr) {
   scene.background = new THREE.Color(0xd8dce6);
 
   var PANEL_W = 0; // panel is now a bottom sheet
-  // TOP_BAR_H computed dynamically from DOM to account for safe-area-inset-top
+  var BASE_TOP_BAR_H = 44;
+  var BASE_SUB_HDR_H = 36;
+  var uiZoom = 1.0;
+  // TOP_BAR_H read from DOM to capture safe-area-inset-top; scaled by uiZoom
   function getTopBarH() {
-    return document.getElementById('topBar').offsetHeight || 44;
+    return document.getElementById('topBar').offsetHeight || Math.round(BASE_TOP_BAR_H * uiZoom);
   }
-  var TOP_BAR_H = 44; // will be updated after first layout
+  var TOP_BAR_H = 44;
   var SUB_HDR_H = 36;
+
+  function applyZoom(z) {
+    uiZoom = z;
+    SUB_HDR_H = Math.round(BASE_SUB_HDR_H * z);
+    document.documentElement.style.fontSize = (16 * z) + 'px';
+    updateLayout();
+    if (splitMode || viewMode === '2d') {
+      resizeSplitCanvas();
+      render2DFloor(usePlaneZ ? planeZ : 0, document.getElementById('canvas2DSplit'));
+    }
+    localStorage.setItem('app-zoom', z);
+  }
   var splitX = Math.floor(innerWidth / 2);
   var splitRatio = 0.5;
 
@@ -2194,6 +2209,20 @@ window.toggleSection = function(id, hdr) {
       if (dragging) { dragging = false; handle.classList.remove('dragging'); }
     });
   }());
+
+  // ---- Keyboard zoom (⌘+/⌘-/⌘0) — Mac only, activates on first ⌘ press ----
+  var macConfirmed = false;
+  document.addEventListener('keydown', function(e) {
+    if (!e.metaKey) return;
+    if (!macConfirmed) {
+      macConfirmed = true;
+      uiZoom = parseFloat(localStorage.getItem('app-zoom') || '1.0');
+      applyZoom(uiZoom);
+    }
+    if      (e.key === '=' || e.key === '+') { e.preventDefault(); applyZoom(Math.min(+(uiZoom + 0.1).toFixed(1), 3.0)); }
+    else if (e.key === '-')                  { e.preventDefault(); applyZoom(Math.max(+(uiZoom - 0.1).toFixed(1), 0.5)); }
+    else if (e.key === '0')                  { e.preventDefault(); applyZoom(1.0); }
+  });
 
 })();
 </script>
