@@ -10,137 +10,120 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #d8dce6; overflow: hidden; font-family: 'Segoe UI', sans-serif;
+    font-size: 16px; /* base for rem; scaled by applyZoom */
   }
   canvas { display: block; }
 
-  #panel h3 {
-    font-size: 13px; color: #445; margin: 0 0 10px 0;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    cursor: pointer; display: flex; justify-content: space-between;
-    align-items: center; user-select: none;
-  }
-  .arr { font-size: 10px; color: #889; transition: transform 0.15s; flex-shrink: 0; }
-  .field { margin-bottom: 10px; }
-  .field label {
-    display: block; font-size: 11px; color: #667; margin-bottom: 3px;
-  }
-  .field .row { display: flex; gap: 6px; align-items: center; }
+  .arr { font-size: 0.625rem; color: #889; transition: transform 0.15s; flex-shrink: 0; }
+  .field { margin-bottom: 0.625rem; }
+  .field label { display: block; font-size: 0.6875rem; color: #667; margin-bottom: 0.1875rem; }
+  .field .row { display: flex; gap: 0.375rem; align-items: center; }
   .field input[type=number] {
-    width: 70px; padding: 5px 8px; border: 1px solid #ccd;
-    border-radius: 6px; font-size: 13px; background: #f8f9fc;
-    text-align: center;
+    width: 4.375rem; padding: 0.3125rem 0.5rem; border: 1px solid #ccd;
+    border-radius: 0.375rem; font-size: 0.8125rem; background: #f8f9fc; text-align: center;
   }
   .field input[type=number]:focus { outline: none; border-color: #2266cc; }
-  .field .unit { font-size: 11px; color: #889; }
-  .sep { border: none; border-top: 1px solid #dde; margin: 12px 0; }
+  .field .unit { font-size: 0.6875rem; color: #889; }
+  .sep { border: none; border-top: 1px solid #dde; margin: 0.75rem 0; }
 
-  .slider-field { margin-bottom: 10px; }
+  .slider-field { margin-bottom: 0.625rem; }
   .slider-field label {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 11px; color: #667; margin-bottom: 3px;
+    font-size: 0.6875rem; color: #667; margin-bottom: 0.1875rem;
   }
   .slider-field label span { color: #334; font-weight: 600; }
   .slider-field input[type=range] { width: 100%; accent-color: #2266cc; }
 
   #applyBtn {
-    width: 100%; padding: 8px; border: none; border-radius: 8px;
-    background: #2266cc; color: #fff; font-size: 13px; cursor: pointer;
-    font-weight: 600; margin-top: 4px;
+    width: 100%; padding: 0.5rem; border: none; border-radius: 0.5rem;
+    background: #2266cc; color: #fff; font-size: 0.8125rem; cursor: pointer;
+    font-weight: 600; margin-top: 0.25rem;
   }
   #applyBtn:hover { background: #1a55b0; }
   #applyBtn:active { background: #154a9a; }
 
   #dimLabel {
-    position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    position: fixed; bottom: calc(5rem + env(safe-area-inset-bottom)); transform: translateX(-50%);
     background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
-    padding: 6px 14px; border-radius: 10px; font-size: 11px; color: #445;
+    padding: 0.375rem 0.875rem; border-radius: 0.625rem; font-size: 0.6875rem; color: #445;
     pointer-events: none; z-index: 10;
   }
   #topBar {
     position: fixed; top: 0; left: 0; right: 0;
-    height: calc(44px + env(safe-area-inset-top));
+    height: calc(2.75rem + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
     background: rgba(255,255,255,0.90); backdrop-filter: blur(10px);
     border-bottom: 1px solid #ccd;
     display: flex; align-items: center; justify-content: space-between;
-    padding-left: 10px; padding-right: 10px; z-index: 50;
+    padding-left: 0.625rem; padding-right: 0.625rem; z-index: 50;
   }
   #topBar .tb-left { display: flex; align-items: center; }
-  #topBar .tb-center { flex: 1; text-align: center; padding: 0 8px; }
-  #topBar .cov-info {
-    font-size: 13px; color: #334; font-weight: 600; letter-spacing: 0.2px;
-  }
+  #topBar .tb-center { flex: 1; text-align: center; padding: 0 0.5rem; }
+  #topBar .cov-info { font-size: 0.8125rem; color: #334; font-weight: 600; letter-spacing: 0.2px; }
   #topBar .cov-info strong { color: #223; }
   #topBar .cov-info .lbl { font-weight: 400; color: #667; }
   #topBar .tb-right { display: flex; justify-content: flex-end; position: relative; }
 
   #exportBtn {
-    padding: 6px 14px; border: 1px solid #bbc; border-radius: 7px;
-    background: #f0f2f7; color: #334; font-size: 12px; font-weight: 600;
+    padding: 0.375rem 0.875rem; border: 1px solid #bbc; border-radius: 0.4375rem;
+    background: #f0f2f7; color: #334; font-size: 0.75rem; font-weight: 600;
     cursor: pointer; letter-spacing: 0.3px;
   }
   #exportBtn:hover { background: #e2e6f0; border-color: #99a; }
 
   #exportDropdown {
-    display: none; position: absolute; top: 36px; right: 0;
-    background: #fff; border: 1px solid #ccd; border-radius: 10px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.13); padding: 14px 16px;
-    min-width: 210px; z-index: 200;
+    display: none; position: absolute; top: 2.25rem; right: 0;
+    background: #fff; border: 1px solid #ccd; border-radius: 0.625rem;
+    box-shadow: 0 0.25rem 1.125rem rgba(0,0,0,0.13); padding: 0.875rem 1rem;
+    min-width: 13.125rem; z-index: 200;
   }
   #exportDropdown.open { display: block; }
   #exportDropdown .exp-title {
-    font-size: 11px; font-weight: 700; color: #445; text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 10px;
+    font-size: 0.6875rem; font-weight: 700; color: #445; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 0.625rem;
   }
   #exportDropdown label {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px; color: #334; cursor: pointer;
-    padding: 4px 0; user-select: none;
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.8125rem; color: #334; cursor: pointer; padding: 0.25rem 0; user-select: none;
   }
   #exportDropdown label input[type=checkbox] { cursor: pointer; accent-color: #2266cc; }
-  #exportDropdown .exp-sep { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+  #exportDropdown .exp-sep { border: none; border-top: 1px solid #eee; margin: 0.625rem 0; }
   #exportDoBtn {
-    width: 100%; padding: 7px; border: none; border-radius: 7px;
-    background: #2266cc; color: #fff; font-size: 13px; font-weight: 600;
-    cursor: pointer; margin-bottom: 2px;
+    width: 100%; padding: 0.4375rem; border: none; border-radius: 0.4375rem;
+    background: #2266cc; color: #fff; font-size: 0.8125rem; font-weight: 600;
+    cursor: pointer; margin-bottom: 0.125rem;
   }
   #exportDoBtn:hover { background: #1a55b0; }
   #importFileBtn {
-    width: 100%; padding: 7px; border: 1px solid #bbc; border-radius: 7px;
-    background: #f0f2f7; color: #334; font-size: 13px; font-weight: 600;
-    cursor: pointer;
+    width: 100%; padding: 0.4375rem; border: 1px solid #bbc; border-radius: 0.4375rem;
+    background: #f0f2f7; color: #334; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
   }
   #importFileBtn:hover { background: #e2e6f0; }
-  #importStatus {
-    font-size: 11px; color: #559944; margin-top: 6px; min-height: 14px; text-align: center;
-  }
+  #importStatus { font-size: 0.6875rem; color: #559944; margin-top: 0.375rem; min-height: 0.875rem; text-align: center; }
 
   #saveAsModal {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45); z-index: 300;
-    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45); z-index: 300; align-items: center; justify-content: center;
   }
   #saveAsModal.open { display: flex; }
   #saveAsBox {
-    background: #fff; border-radius: 12px; padding: 20px 22px 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.22); min-width: 300px;
+    background: #fff; border-radius: 0.75rem; padding: 1.25rem 1.375rem 1rem;
+    box-shadow: 0 0.5rem 2rem rgba(0,0,0,0.22); min-width: 18.75rem;
   }
   #saveAsBox h4 {
-    font-size: 13px; font-weight: 700; color: #334;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+    font-size: 0.8125rem; font-weight: 700; color: #334;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.875rem;
   }
-  #saveAsBox .sa-row { margin-bottom: 10px; }
-  #saveAsBox .sa-row label {
-    display: block; font-size: 11px; color: #667; margin-bottom: 3px;
-  }
+  #saveAsBox .sa-row { margin-bottom: 0.625rem; }
+  #saveAsBox .sa-row label { display: block; font-size: 0.6875rem; color: #667; margin-bottom: 0.1875rem; }
   #saveAsBox .sa-row input {
-    width: 100%; padding: 6px 8px; border: 1px solid #ccd;
-    border-radius: 6px; font-size: 13px; background: #f8f9fc;
+    width: 100%; padding: 0.375rem 0.5rem; border: 1px solid #ccd;
+    border-radius: 0.375rem; font-size: 0.8125rem; background: #f8f9fc;
   }
   #saveAsBox .sa-row input:focus { outline: none; border-color: #2266cc; }
-  #saveAsBox .sa-btns { display: flex; gap: 8px; margin-top: 14px; }
+  #saveAsBox .sa-btns { display: flex; gap: 0.5rem; margin-top: 0.875rem; }
   #saveAsBox .sa-btns button {
-    flex: 1; padding: 8px; border-radius: 7px; font-size: 13px;
+    flex: 1; padding: 0.5rem; border-radius: 0.4375rem; font-size: 0.8125rem;
     font-weight: 600; cursor: pointer; border: none;
   }
   #saveAsConfirm { background: #2266cc; color: #fff; }
@@ -149,49 +132,45 @@
   #saveAsCancel:hover { background: #e2e6f0; }
 
   .measureBox {
-    display: none; position: absolute; bottom: 40px; left: 12px;
+    display: none; position: absolute; bottom: 2.5rem; left: 0.75rem;
     background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-    border-radius: 10px; padding: 10px 12px 8px;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.16); z-index: 20; width: 174px;
+    border-radius: 0.625rem; padding: 0.625rem 0.75rem 0.5rem;
+    box-shadow: 0 0.125rem 0.875rem rgba(0,0,0,0.16); z-index: 20; width: 10.875rem;
   }
   .measureBox .mb-title {
-    font-size: 10px; font-weight: 700; color: #445; text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 6px;
+    font-size: 0.625rem; font-weight: 700; color: #445; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 0.375rem;
   }
-  .measureBox .mb-vals {
-    font-size: 12px; color: #334; line-height: 1.85; margin-top: 7px;
-  }
+  .measureBox .mb-vals { font-size: 0.75rem; color: #334; line-height: 1.85; margin-top: 0.4375rem; }
   .measureBox .mb-clear {
-    margin-top: 7px; width: 100%; padding: 4px; border: 1px solid #ccd;
-    border-radius: 6px; background: #f4f5f9; color: #556;
-    font-size: 11px; cursor: pointer;
+    margin-top: 0.4375rem; width: 100%; padding: 0.25rem; border: 1px solid #ccd;
+    border-radius: 0.375rem; background: #f4f5f9; color: #556; font-size: 0.6875rem; cursor: pointer;
   }
   .measureBox .mb-clear:hover { background: #e8eaf0; }
 
   #header3D {
-    position: fixed; top: 44px; height: 36px;
+    position: fixed; height: 2.25rem;
     background: rgba(255,255,255,0.72); backdrop-filter: blur(8px);
     border-bottom: 1px solid #dde;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 14px; z-index: 40; box-sizing: border-box;
+    padding: 0 0.875rem; z-index: 40; box-sizing: border-box;
   }
   #header3D .hdr-title {
-    font-size: 12px; font-weight: 600; color: #445;
+    font-size: 0.75rem; font-weight: 600; color: #445;
     letter-spacing: 0.5px; text-transform: uppercase;
   }
 
   #dragHandle {
-    position: fixed; top: 44px; width: 6px; cursor: col-resize;
-    background: #c4c8d4; z-index: 70; display: none;
-    transition: background 0.15s;
+    position: fixed; width: 0.375rem; cursor: col-resize;
+    background: #c4c8d4; z-index: 70; display: none; transition: background 0.15s;
   }
   #dragHandle:hover, #dragHandle.dragging { background: #2266cc; }
 
   /* View mode pill selector */
-  .view-pill { display: flex; align-items: center; background: #e4e7ef; border-radius: 8px; padding: 2px; gap: 1px; }
+  .view-pill { display: flex; align-items: center; background: #e4e7ef; border-radius: 0.5rem; padding: 0.125rem; gap: 1px; }
   .pill-btn {
-    padding: 5px 9px; border: none; border-radius: 6px;
-    font-size: 11px; font-weight: 600; color: #667;
+    padding: 0.3125rem 0.5625rem; border: none; border-radius: 0.375rem;
+    font-size: 0.6875rem; font-weight: 600; color: #667;
     background: transparent; cursor: pointer;
     transition: background 0.12s, color 0.12s; white-space: nowrap; letter-spacing: 0.2px;
   }
@@ -199,79 +178,77 @@
 
   /* Floating settings button */
   #settingsBtn {
-    position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); right: 20px;
-    width: 50px; height: 50px; border-radius: 50%;
+    position: fixed; bottom: calc(1.5rem + env(safe-area-inset-bottom)); right: 1.25rem;
+    width: 3.125rem; height: 3.125rem; border-radius: 50%;
     background: rgba(34,102,204,0.90); backdrop-filter: blur(8px);
     border: none; color: #fff; cursor: pointer;
-    box-shadow: 0 3px 18px rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0.1875rem 1.125rem rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center;
     z-index: 60; transition: background 0.15s, transform 0.15s;
   }
   #settingsBtn:active { background: rgba(26,85,176,0.97); transform: scale(0.93); }
 
   /* Settings slide-in drawer */
   #settingsBackdrop {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.32); z-index: 80;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.32); z-index: 80;
   }
   #settingsBackdrop.open { display: block; }
   #settingsSheet {
     position: fixed; top: 0; left: 0; bottom: 0;
-    width: min(300px, 85vw);
+    width: min(18.75rem, 85vw);
     background: rgba(248,249,252,0.99); backdrop-filter: blur(14px);
-    border-radius: 0 18px 18px 0;
-    box-shadow: 4px 0 28px rgba(0,0,0,0.22);
+    border-radius: 0 1.125rem 1.125rem 0;
+    box-shadow: 0.25rem 0 1.75rem rgba(0,0,0,0.22);
     z-index: 90;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.34,1.06,0.64,1);
-    overflow: hidden;
-    display: flex; flex-direction: column;
+    overflow: hidden; display: flex; flex-direction: column;
   }
   #settingsSheet.open { transform: translateX(0); }
   #sheetHandle {
     display: flex; align-items: center; justify-content: space-between;
-    padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+    padding: calc(0.75rem + env(safe-area-inset-top)) 1rem 0.625rem;
     border-bottom: 1px solid #dde; flex-shrink: 0;
   }
   #sheetHandle .sh-title {
-    font-size: 13px; font-weight: 700; color: #334;
+    font-size: 0.8125rem; font-weight: 700; color: #334;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   #sheetHandle .sh-close {
-    background: none; border: none; font-size: 20px; color: #889;
-    cursor: pointer; padding: 0 4px; line-height: 1;
+    background: none; border: none; font-size: 1.25rem; color: #889;
+    cursor: pointer; padding: 0 0.25rem; line-height: 1;
   }
   #settingsSheetInner {
-    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    padding: 0.75rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
     overflow-y: auto; flex: 1;
   }
   #settingsSheetInner h3 {
-    font-size: 13px; color: #445; margin: 0 0 10px 0;
+    font-size: 0.8125rem; color: #445; margin: 0 0 0.625rem 0;
     text-transform: uppercase; letter-spacing: 0.5px;
     cursor: pointer; display: flex; justify-content: space-between;
     align-items: center; user-select: none;
   }
-  #settingsSheetInner .arr { font-size: 10px; color: #889; transition: transform 0.15s; flex-shrink: 0; }
-  #settingsSheetInner .field { margin-bottom: 10px; }
-  #settingsSheetInner .field label { display: block; font-size: 11px; color: #667; margin-bottom: 3px; }
-  #settingsSheetInner .field .row { display: flex; gap: 6px; align-items: center; }
+  #settingsSheetInner .arr { font-size: 0.625rem; color: #889; transition: transform 0.15s; flex-shrink: 0; }
+  #settingsSheetInner .field { margin-bottom: 0.625rem; }
+  #settingsSheetInner .field label { display: block; font-size: 0.6875rem; color: #667; margin-bottom: 0.1875rem; }
+  #settingsSheetInner .field .row { display: flex; gap: 0.375rem; align-items: center; }
   #settingsSheetInner .field input[type=number] {
-    width: 70px; padding: 5px 8px; border: 1px solid #ccd;
-    border-radius: 6px; font-size: 13px; background: #f8f9fc; text-align: center;
+    width: 4.375rem; padding: 0.3125rem 0.5rem; border: 1px solid #ccd;
+    border-radius: 0.375rem; font-size: 0.8125rem; background: #f8f9fc; text-align: center;
   }
   #settingsSheetInner .field input[type=number]:focus { outline: none; border-color: #2266cc; }
-  #settingsSheetInner .field .unit { font-size: 11px; color: #889; }
-  #settingsSheetInner .sep { border: none; border-top: 1px solid #dde; margin: 12px 0; }
-  #settingsSheetInner .slider-field { margin-bottom: 10px; }
+  #settingsSheetInner .field .unit { font-size: 0.6875rem; color: #889; }
+  #settingsSheetInner .sep { border: none; border-top: 1px solid #dde; margin: 0.75rem 0; }
+  #settingsSheetInner .slider-field { margin-bottom: 0.625rem; }
   #settingsSheetInner .slider-field label {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 11px; color: #667; margin-bottom: 3px;
+    font-size: 0.6875rem; color: #667; margin-bottom: 0.1875rem;
   }
   #settingsSheetInner .slider-field label span { color: #334; font-weight: 600; }
   #settingsSheetInner .slider-field input[type=range] { width: 100%; accent-color: #2266cc; }
   #settingsSheetInner #applyBtn {
-    width: 100%; padding: 8px; border: none; border-radius: 8px;
-    background: #2266cc; color: #fff; font-size: 13px; cursor: pointer;
-    font-weight: 600; margin-top: 4px;
+    width: 100%; padding: 0.5rem; border: none; border-radius: 0.5rem;
+    background: #2266cc; color: #fff; font-size: 0.8125rem; cursor: pointer;
+    font-weight: 600; margin-top: 0.25rem;
   }
   #settingsSheetInner #applyBtn:active { background: #154a9a; }
 
