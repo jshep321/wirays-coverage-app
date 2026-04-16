@@ -319,15 +319,15 @@
   <div id="secRoom">
     <div class="field">
       <label>Width (X)</label>
-      <div class="row"><input type="number" id="roomX" value="10" min="2" max="40" step="0.5"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomX" value="10" min="0" max="40" step="0.5"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Depth (Y)</label>
-      <div class="row"><input type="number" id="roomY" value="10" min="2" max="40" step="0.5"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomY" value="10" min="0" max="40" step="0.5"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Height (Z)</label>
-      <div class="row"><input type="number" id="roomZ" value="3" min="2" max="12" step="0.25"><span class="unit">m</span></div>
+      <div class="row"><input type="number" id="roomZ" value="3" min="0" max="12" step="0.25"><span class="unit">m</span></div>
     </div>
     <div class="field">
       <label>Plane of Interest (Z')</label>
@@ -1605,12 +1605,12 @@ window.toggleSection = function(id, hdr) {
   var roomZInput = document.getElementById('roomZ');
 
   document.getElementById('applyBtn').addEventListener('click', function() {
-    roomW = parseFloat(roomXInput.value) || 8;
-    roomD = parseFloat(roomYInput.value) || 8;
-    roomH = parseFloat(roomZInput.value) || 3;
-    roomW = Math.max(2, Math.min(40, roomW));
-    roomH = Math.max(2, Math.min(12, roomH));
-    roomD = Math.max(2, Math.min(40, roomD));
+    roomW = isNaN(parseFloat(roomXInput.value)) ? 8 : parseFloat(roomXInput.value);
+    roomD = isNaN(parseFloat(roomYInput.value)) ? 8 : parseFloat(roomYInput.value);
+    roomH = isNaN(parseFloat(roomZInput.value)) ? 3 : parseFloat(roomZInput.value);
+    roomW = Math.max(0, Math.min(40, roomW));
+    roomH = Math.max(0, Math.min(12, roomH));
+    roomD = Math.max(0, Math.min(40, roomD));
     planeZ = Math.max(0, Math.min(roomH - 0.01, planeZ));
     document.getElementById('planeZInput').value = planeZ;
     rebuildScene();
