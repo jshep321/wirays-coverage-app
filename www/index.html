@@ -88,6 +88,26 @@
   }
   #exportDropdown label input[type=checkbox] { cursor: pointer; accent-color: #2266cc; }
   #exportDropdown .exp-sep { border: none; border-top: 1px solid #eee; margin: 0.625rem 0; }
+  .adv-field { display:none; }
+  body.advanced .adv-field { display:block; }
+  .adv-mode-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0 0.75rem; border-bottom: 1px solid #dde; margin-bottom: 0.75rem;
+  }
+  .adv-mode-row > span { font-size: 0.875rem; font-weight: 600; color: #334; }
+  .ios-tog { position:relative; display:inline-block; width:2.375rem; height:1.375rem; flex-shrink:0; }
+  .ios-tog input { opacity:0; width:0; height:0; position:absolute; }
+  .ios-tog-slider {
+    position:absolute; inset:0; background:#ccc; border-radius:1.375rem;
+    transition:background .2s; cursor:pointer;
+  }
+  .ios-tog-slider:before {
+    content:''; position:absolute; height:1.0625rem; width:1.0625rem;
+    left:0.1563rem; top:0.1563rem; background:#fff; border-radius:50%;
+    transition:transform .2s; box-shadow:0 0.0625rem 0.1875rem rgba(0,0,0,.28);
+  }
+  .ios-tog input:checked + .ios-tog-slider { background:#2266cc; }
+  .ios-tog input:checked + .ios-tog-slider:before { transform:translateX(1rem); }
   #exportDoBtn {
     width: 100%; padding: 0.4375rem; border: none; border-radius: 0.4375rem;
     background: #2266cc; color: #fff; font-size: 0.8125rem; font-weight: 600;
@@ -316,6 +336,10 @@
   <div style="text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #dde;">
     <img id="panelLogoImg" style="width:180px;height:auto;display:block;margin:0 auto;" alt="Lumeova">
   </div>
+  <div class="adv-mode-row">
+    <span>Advanced Mode</span>
+    <label class="ios-tog"><input type="checkbox" id="advancedModeChk"><span class="ios-tog-slider"></span></label>
+  </div>
   <h3 onclick="window.toggleSection('secRoom',this)">Room Dimensions <span class="arr">▾</span></h3>
   <div id="secRoom">
     <div class="field">
@@ -354,11 +378,13 @@
         <label>Diffuser Angle <span id="centerWidthVal">40&deg;</span></label>
         <input type="range" id="centerWidthSlider" min="0" max="180" value="40">
       </div>
-      <div class="field">
-        <label>Power per emitter</label>
-        <div class="row"><input type="number" id="centerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      <div class="adv-field">
+        <div class="field">
+          <label>Power per emitter</label>
+          <div class="row"><input type="number" id="centerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+        </div>
+        <div id="centerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">1 &times; 100 mW = 100 mW</div>
       </div>
-      <div id="centerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">1 &times; 100 mW = 100 mW</div>
     </div>
     <hr class="sep">
     <div onclick="window.toggleSection('secMid',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
@@ -379,11 +405,13 @@
         <label>Diffuser <span id="midWidthVal">20&deg;</span></label>
         <input type="range" id="midWidthSlider" min="0" max="180" value="20">
       </div>
-      <div class="field">
-        <label>Power per emitter</label>
-        <div class="row"><input type="number" id="midPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      <div class="adv-field">
+        <div class="field">
+          <label>Power per emitter</label>
+          <div class="row"><input type="number" id="midPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+        </div>
+        <div id="midPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
       </div>
-      <div id="midPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
     </div>
     <hr class="sep">
     <div onclick="window.toggleSection('secOuter',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
@@ -404,11 +432,13 @@
         <label>Diffuser <span id="widthVal">20&deg;</span></label>
         <input type="range" id="widthSlider" min="0" max="180" value="20">
       </div>
-      <div class="field">
-        <label>Power per emitter</label>
-        <div class="row"><input type="number" id="outerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      <div class="adv-field">
+        <div class="field">
+          <label>Power per emitter</label>
+          <div class="row"><input type="number" id="outerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+        </div>
+        <div id="outerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
       </div>
-      <div id="outerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
     </div>
   </div>
 
@@ -2350,6 +2380,18 @@ window.toggleSection = function(id, hdr) {
         e.target !== document.getElementById('exportBtn')) {
       document.getElementById('exportDropdown').classList.remove('open');
     }
+  });
+
+  var advancedMode = localStorage.getItem('advancedMode') === '1';
+  function applyAdvancedMode() {
+    document.body.classList.toggle('advanced', advancedMode);
+    document.getElementById('advancedModeChk').checked = advancedMode;
+  }
+  applyAdvancedMode();
+  document.getElementById('advancedModeChk').addEventListener('change', function() {
+    advancedMode = this.checked;
+    localStorage.setItem('advancedMode', advancedMode ? '1' : '0');
+    applyAdvancedMode();
   });
 
   document.getElementById('exportDoBtn').addEventListener('click', function() {
