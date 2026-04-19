@@ -113,7 +113,7 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 
 ### Export
 - 3D PNG, 2D PNG, Settings JSON — via share sheet (`@capacitor/share`)
-- Zemax NSC (.zmx) — OpticStudio Non-Sequential source + detector file
+- Zemax Script (.py) — Python ZOS-API script to build an NSC system in OpticStudio (Source Cone objects + Detector Rectangle)
 - Cross-browser save-as modal for desktop/Mac
 
 ## Development Notes
@@ -125,5 +125,5 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 - Room dimension inputs accept 0 as minimum, no upper cap — JS fallback handles NaN/empty only
 - `drawWatermark(ctx, W, H)` renders tiled copyright text; `get3DWithWatermark()` composites for export
 - `updatePowerLabels()` keeps `N × P mW` labels live as count/power change
-- `buildZemaxExport()` generates Zemax NSC `.zmx`; Euler angles derived from beam direction vector
+- `buildZemaxExport()` generates `wirays_nsc.py` — ZOS-API Python script; all beam params hardcoded at top, run from OpticStudio Script Editor or as standalone extension
 - `touch-action: none` on sliders prevents iOS scroll interference during drag

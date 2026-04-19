@@ -284,7 +284,7 @@
       <label><input type="checkbox" id="exp2D" checked> 2D Coverage Image</label>
       <label><input type="checkbox" id="exp3D" checked> 3D View Image</label>
       <label><input type="checkbox" id="expData" checked> Settings (JSON)</label>
-      <label><input type="checkbox" id="expZemax"> Zemax NSC (.zmx)</label>
+      <label><input type="checkbox" id="expZemax"> Zemax Script (.py)</label>
       <hr class="exp-sep">
       <button id="exportDoBtn">Download</button>
     </div>
@@ -1421,112 +1421,183 @@ window.toggleSection = function(id, hdr) {
     var deg = 180 / Math.PI;
     var rad = Math.PI / 180;
 
+    // Euler tilts for Zemax NSC Source Cone.
+    // Sources emit along local +Z. Rotation order: Rx then Rz (TiltAboutY=0).
+    // Applied to (0,0,1): result = (sin(tz)*sin(tx), -cos(tz)*sin(tx), cos(tx))
+    // We want direction (dx, dy, dz) where dy = -cos(theta), dx = sin(theta)*cos(az), dz = sin(theta)*sin(az).
+    // => TiltAboutX = acos(dz),  TiltAboutZ = atan2(dx, -dy)
     function beamTilts(theta_deg, az_rad) {
       var theta = theta_deg * rad;
       var dz = Math.sin(theta) * Math.sin(az_rad);
       var dx = Math.sin(theta) * Math.cos(az_rad);
       var dy = -Math.cos(theta);
-      var tiltX = Math.acos(Math.max(-1, Math.min(1, dz))) * deg;
-      var tiltZ = Math.atan2(dx, -dy) * deg;
-      return { tiltX: tiltX, tiltZ: tiltZ };
+      return {
+        tiltX: Math.acos(Math.max(-1, Math.min(1, dz))) * deg,
+        tiltZ: Math.atan2(dx, -dy) * deg
+      };
     }
 
-    var L = [];
-    var obj = 0;
-    var dt = new Date().toISOString().slice(0, 10);
-    var nObj = 1 + outerCount + midBeamCount + 1;
-
-    function addSrc(comment, x, y, z, tiltX, tiltZ, semiDeg, powMW) {
-      obj++;
-      var powW = (powMW / 1000).toFixed(6);
-      L.push('OBDC ' + obj);
-      L.push('  OBTP ' + obj + ' 1 0 "Source Cone"');
-      L.push('  COMM ' + obj + ' ' + comment);
-      L.push('  XDAT ' + obj + ' 0 ' + x.toFixed(4) + ' ' + y.toFixed(4) + ' ' + z.toFixed(4) +
-             ' ' + tiltX.toFixed(4) + ' 0.0000 ' + tiltZ.toFixed(4));
-      L.push('  OPAR ' + obj + ' 0 100 1000000 ' + powW + ' 0.85000 0 0 ' + semiDeg.toFixed(4) +
-             ' 0 0 0 0 0 0 0');
-      L.push('  FLAP ' + obj + ' 0 0');
-      L.push('  BBUF ' + obj + ' 0');
-      L.push('  ENDB ' + obj);
-      L.push('');
-    }
-
-    L.push('! ================================================================');
-    L.push('! WiRays\u00AE Coverage Estimator \u2014 Zemax OpticStudio NSC Export');
-    L.push('! Generated: ' + dt);
-    L.push('! Room: X=' + roomW + 'm  Depth=' + roomD + 'm  Height=' + roomH + 'm');
-    L.push('! Plane of Interest Z\': ' + planeZ + 'm');
-    L.push('! Wavelength: 0.850 \u03BCm (NIR default \u2014 adjust as needed)');
-    L.push('!');
-    L.push('! COORDINATE SYSTEM (Zemax NSC):');
-    L.push('!   Zemax X = WiRays X (width)');
-    L.push('!   Zemax Y = WiRays Z (height, +Y = up)');
-    L.push('!   Zemax Z = WiRays Y (depth)');
-    L.push('!   All units: mm');
-    L.push('!');
-    L.push('! HOW TO USE: File > Open in OpticStudio (Non-Sequential mode).');
-    L.push('! Run NSC ray trace: Analysis > Non-Sequential > Ray Trace');
-    L.push('! ================================================================');
-    L.push('');
-    L.push('VERS 22.2 0 0');
-    L.push('MODE NSC');
-    L.push('UNIT MM X W');
-    L.push('NCOM 0');
-    L.push('FTYP 0 0 3 0 0 0 0');
-    L.push('WAVE 1');
-    L.push('WLWT 0.85000 1.00000');
-    L.push('GFAC 0 0');
-    L.push('NSCD 100 1000000 5 1E-006 5 1E-006 0 1E+014 1 0 1 0');
-    L.push('COFN QF "COATING.DAT" "SCATTER_PROFILE.DAT" "ABG_DATA.DAT" "PROFILE.GRD"');
-    L.push('SURF 0');
-    L.push('  TYPE STANDARD');
-    L.push('  CURV 0.0');
-    L.push('  DISZ INFINITY');
-    L.push('  HIDE 0 0 0 0 0 0 0 0 0 0');
-    L.push('  MIRR 2 0');
-    L.push('  STPS 0 0 0 0 0 0 0 0 0');
-    L.push('SURF 1');
-    L.push('  TYPE NSCCOMPONENT');
-    L.push('  CURV 0.0');
-    L.push('  DISZ 0.0');
-    L.push('  HIDE 0 0 0 0 0 0 0 0 0 0');
-    L.push('  MIRR 2 0');
-    L.push('  STPS 0 0 0 0 0 0 0 0 0');
-    L.push('');
-    L.push('NSCE ' + nObj);
-    L.push('');
-
+    var beams = [];
     var ct = beamTilts(0, 0);
-    addSrc('Center Beam (vertical)', 0, roomH_mm, 0, ct.tiltX, ct.tiltZ,
-           centerDiffuserAngle / 2, centerPowerMW);
+    beams.push({ comment: 'Center (vertical)', x: 0, y: roomH_mm, z: 0,
+                 tiltX: ct.tiltX, tiltZ: ct.tiltZ,
+                 semi: (centerDiffuserAngle / 2).toFixed(4), powW: (centerPowerMW / 1000).toFixed(6) });
 
     for (var i = 0; i < outerCount; i++) {
       var az = (i / outerCount) * 2 * Math.PI;
       var t = beamTilts(beamAngleDeg, az);
-      addSrc('Outer Beam ' + (i + 1) + ' az=' + (az * deg).toFixed(1) + 'deg',
-             Math.cos(az) * outerR_mm, roomH_mm, Math.sin(az) * outerR_mm,
-             t.tiltX, t.tiltZ, diffuserAngle / 2, outerPowerMW);
+      beams.push({ comment: 'Outer ' + (i + 1) + ' az=' + (az * deg).toFixed(1) + 'deg',
+                   x: Math.cos(az) * outerR_mm, y: roomH_mm, z: Math.sin(az) * outerR_mm,
+                   tiltX: t.tiltX, tiltZ: t.tiltZ,
+                   semi: (diffuserAngle / 2).toFixed(4), powW: (outerPowerMW / 1000).toFixed(6) });
     }
 
     for (var j = 0; j < midBeamCount; j++) {
       var maz = (j / midBeamCount) * 2 * Math.PI;
       var mt = beamTilts(midBeamAngleDeg, maz);
-      addSrc('Middle Beam ' + (j + 1) + ' az=' + (maz * deg).toFixed(1) + 'deg',
-             Math.cos(maz) * midR_mm, roomH_mm, Math.sin(maz) * midR_mm,
-             mt.tiltX, mt.tiltZ, midDiffuserAngle / 2, midPowerMW);
+      beams.push({ comment: 'Middle ' + (j + 1) + ' az=' + (maz * deg).toFixed(1) + 'deg',
+                   x: Math.cos(maz) * midR_mm, y: roomH_mm, z: Math.sin(maz) * midR_mm,
+                   tiltX: mt.tiltX, tiltZ: mt.tiltZ,
+                   semi: (midDiffuserAngle / 2).toFixed(4), powW: (midPowerMW / 1000).toFixed(6) });
     }
 
-    obj++;
-    L.push('OBDC ' + obj);
-    L.push('  OBTP ' + obj + ' 1 0 "Detector Rectangle"');
-    L.push('  COMM ' + obj + ' Z-prime plane (' + planeZ + ' m)');
-    L.push('  XDAT ' + obj + ' 0 0.0000 ' + planeY_mm.toFixed(4) + ' 0.0000 0.0000 0.0000 0.0000');
-    L.push('  OPAR ' + obj + ' 0 ' + (roomW_mm / 2).toFixed(3) + ' ' + (roomD_mm / 2).toFixed(3) +
-           ' 200 200 0 0 0 0 0 0 0 0 0 0');
-    L.push('  FLAP ' + obj + ' 0 0');
-    L.push('  BBUF ' + obj + ' 0');
-    L.push('  ENDB ' + obj);
+    var dt = new Date().toISOString().slice(0, 10);
+    var L = [];
+
+    L.push('#!/usr/bin/env python3');
+    L.push('"""');
+    L.push('WiRays\u00AE Coverage Estimator \u2014 Zemax OpticStudio NSC Setup Script');
+    L.push('Generated: ' + dt);
+    L.push('Room: ' + roomW + ' m \u00D7 ' + roomD + ' m \u00D7 ' + roomH + ' m (W\u00D7D\u00D7H)');
+    L.push('Plane of Interest Z\': ' + planeZ + ' m');
+    L.push('');
+    L.push('HOW TO RUN');
+    L.push('----------');
+    L.push('Option A \u2014 OpticStudio Script Editor (recommended):');
+    L.push('  1. Open OpticStudio');
+    L.push('  2. Tools > Script Editor > File > Open > select this file');
+    L.push('  3. Click Run \u2014 the NSC system is built in the active file');
+    L.push('');
+    L.push('Option B \u2014 Standalone Python extension:');
+    L.push('  Requirements: Python 3.x + pythonnet  (pip install pythonnet)');
+    L.push('  1. Start OpticStudio and open or create an NSC file');
+    L.push('  2. python wirays_nsc.py');
+    L.push('');
+    L.push('Coordinate mapping: Zemax X = WiRays X (width),');
+    L.push('                    Zemax Y = WiRays Z (height, +Y up),');
+    L.push('                    Zemax Z = WiRays Y (depth)');
+    L.push('Units: mm. Wavelength: 0.850 \u03BCm NIR (edit WAVELENGTH_UM to change).');
+    L.push('"""');
+    L.push('');
+    L.push('# ---------------------------------------------------------------------------');
+    L.push('# Beam parameters  (comment, X_mm, Y_mm, Z_mm, TiltAboutX_deg, TiltAboutZ_deg, semi_angle_deg, power_W)');
+    L.push('# ---------------------------------------------------------------------------');
+    L.push('BEAMS = [');
+    for (var k = 0; k < beams.length; k++) {
+      var b = beams[k];
+      L.push('    ("' + b.comment + '",  ' +
+             b.x.toFixed(3) + ', ' + b.y.toFixed(3) + ', ' + b.z.toFixed(3) + ',  ' +
+             b.tiltX.toFixed(4) + ', ' + b.tiltZ.toFixed(4) + ',  ' +
+             b.semi + ',  ' + b.powW + '),');
+    }
+    L.push(']');
+    L.push('');
+    L.push('DETECTOR = {');
+    L.push('    "x_mm": 0.0, "y_mm": ' + planeY_mm.toFixed(3) + ', "z_mm": 0.0,');
+    L.push('    "half_x": ' + (roomW_mm / 2).toFixed(3) + ',  # half-width mm');
+    L.push('    "half_z": ' + (roomD_mm / 2).toFixed(3) + ',  # half-depth mm');
+    L.push('    "nx": 200, "ny": 200,');
+    L.push('}');
+    L.push('');
+    L.push('WAVELENGTH_UM = 0.850');
+    L.push('');
+    L.push('# ---------------------------------------------------------------------------');
+    L.push('# ZOS-API build');
+    L.push('# ---------------------------------------------------------------------------');
+    L.push('import sys, os');
+    L.push('');
+    L.push('');
+    L.push('def build_system():');
+    L.push('    try:');
+    L.push('        import clr  # pythonnet');
+    L.push('    except ImportError:');
+    L.push('        print("ERROR: pythonnet not installed.  Run: pip install pythonnet")');
+    L.push('        sys.exit(1)');
+    L.push('');
+    L.push('    # Adjust this path to match your OpticStudio installation');
+    L.push('    zos_candidates = [');
+    L.push('        r"C:\\Program Files\\Zemax OpticStudio\\ZOS-API\\Libraries\\ZOSAPI_NetHelper.dll",');
+    L.push('        r"C:\\Program Files\\ANSYS Zemax OpticStudio\\ZOS-API\\Libraries\\ZOSAPI_NetHelper.dll",');
+    L.push('    ]');
+    L.push('    helper = next((p for p in zos_candidates if os.path.exists(p)), None)');
+    L.push('    if not helper:');
+    L.push('        print("ERROR: ZOSAPI_NetHelper.dll not found.  Edit zos_candidates in this script.")');
+    L.push('        sys.exit(1)');
+    L.push('');
+    L.push('    clr.AddReference(helper)');
+    L.push('    from ZOSAPI_NetHelper import ZOSAPI_Initializer');
+    L.push('    ZOSAPI_Initializer.Initialize()');
+    L.push('    clr.AddReference("ZOSAPI")');
+    L.push('    from ZOSAPI import ZOSAPI_Connection');
+    L.push('    from ZOSAPI.Editors.NCE import ObjectType');
+    L.push('    import ZOSAPI');
+    L.push('');
+    L.push('    conn = ZOSAPI_Connection()');
+    L.push('    if not conn.IsAlive:');
+    L.push('        print("ERROR: OpticStudio is not running.  Start it first.")');
+    L.push('        sys.exit(1)');
+    L.push('');
+    L.push('    app    = conn.ConnectAsExtension(0)');
+    L.push('    system = app.PrimarySystem');
+    L.push('    system.MakeNonSequential()');
+    L.push('    system.SystemData.Units.LensUnits = ZOSAPI.SystemData.ZemaxSystemUnits.Millimeters');
+    L.push('');
+    L.push('    wl = system.SystemData.Wavelengths');
+    L.push('    wl.GetWavelength(1).Wavelength = WAVELENGTH_UM');
+    L.push('');
+    L.push('    nce = system.NonSeqData');
+    L.push('    n_total = len(BEAMS) + 1  # sources + detector');
+    L.push('    while nce.NumberOfObjects < n_total:');
+    L.push('        nce.AddObject()');
+    L.push('');
+    L.push('    for i, (comment, x, y, z, tx, tz, semi, pwr) in enumerate(BEAMS):');
+    L.push('        obj = nce.GetObjectAt(i + 1)');
+    L.push('        obj.ChangeType(obj.GetObjectTypeSettings(ObjectType.SourceCone))');
+    L.push('        obj.XPosition  = x');
+    L.push('        obj.YPosition  = y');
+    L.push('        obj.ZPosition  = z');
+    L.push('        obj.TiltAboutX = tx');
+    L.push('        obj.TiltAboutY = 0.0');
+    L.push('        obj.TiltAboutZ = tz');
+    L.push('        obj.Comment    = comment');
+    L.push('        src = obj.ObjectData        # ISourceConeData');
+    L.push('        src.NumberOfLayoutRays   = 100');
+    L.push('        src.NumberOfAnalysisRays = 1000000');
+    L.push('        src.Power      = pwr');
+    L.push('        src.SemiAngle  = semi');
+    L.push('        src.Wavelength = 1');
+    L.push('');
+    L.push('    det_idx = len(BEAMS) + 1');
+    L.push('    det = nce.GetObjectAt(det_idx)');
+    L.push('    det.ChangeType(det.GetObjectTypeSettings(ObjectType.DetectorRectangle))');
+    L.push('    det.XPosition = DETECTOR["x_mm"]');
+    L.push('    det.YPosition = DETECTOR["y_mm"]');
+    L.push('    det.ZPosition = DETECTOR["z_mm"]');
+    L.push('    det.Comment   = "Z-prime plane detector (' + planeZ + ' m)"');
+    L.push('    dd = det.ObjectData        # IDetectorRectangleData');
+    L.push('    dd.XHalfWidth       = DETECTOR["half_x"]');
+    L.push('    dd.YHalfWidth       = DETECTOR["half_z"]');
+    L.push('    dd.NumberOfXPixels  = DETECTOR["nx"]');
+    L.push('    dd.NumberOfYPixels  = DETECTOR["ny"]');
+    L.push('');
+    L.push('    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wirays_nsc.zos")');
+    L.push('    system.SaveAs(out)');
+    L.push('    print("Done \u2014 system saved as wirays_nsc.zos")');
+    L.push('    print("Open in OpticStudio, then: Analysis > Non-Sequential > Ray Trace")');
+    L.push('');
+    L.push('');
+    L.push('if __name__ == "__main__":');
+    L.push('    build_system()');
 
     return L.join('\n');
   }
@@ -2322,7 +2393,7 @@ window.toggleSection = function(id, hdr) {
     }
 
     if (document.getElementById('expZemax').checked) {
-      saveAs('wirays_nsc.zmx', new Blob([buildZemaxExport()], { type: 'text/plain' }));
+      saveAs('wirays_nsc.py', new Blob([buildZemaxExport()], { type: 'text/plain' }));
     }
 
     document.getElementById('exportDropdown').classList.remove('open');
