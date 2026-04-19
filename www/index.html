@@ -284,6 +284,7 @@
       <label><input type="checkbox" id="exp2D" checked> 2D Coverage Image</label>
       <label><input type="checkbox" id="exp3D" checked> 3D View Image</label>
       <label><input type="checkbox" id="expData" checked> Settings (JSON)</label>
+      <label><input type="checkbox" id="expZemax"> Zemax NSC (.zmx)</label>
       <hr class="exp-sep">
       <button id="exportDoBtn">Download</button>
     </div>
@@ -353,6 +354,11 @@
         <label>Diffuser Angle <span id="centerWidthVal">40&deg;</span></label>
         <input type="range" id="centerWidthSlider" min="0" max="180" value="40">
       </div>
+      <div class="field">
+        <label>Power per emitter</label>
+        <div class="row"><input type="number" id="centerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      </div>
+      <div id="centerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">1 &times; 100 mW = 100 mW</div>
     </div>
     <hr class="sep">
     <div onclick="window.toggleSection('secMid',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
@@ -373,6 +379,11 @@
         <label>Diffuser <span id="midWidthVal">20&deg;</span></label>
         <input type="range" id="midWidthSlider" min="0" max="180" value="20">
       </div>
+      <div class="field">
+        <label>Power per emitter</label>
+        <div class="row"><input type="number" id="midPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      </div>
+      <div id="midPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
     </div>
     <hr class="sep">
     <div onclick="window.toggleSection('secOuter',this)" style="display:flex;align-items:center;gap:5px;margin-bottom:7px;cursor:pointer;user-select:none;">
@@ -393,6 +404,11 @@
         <label>Diffuser <span id="widthVal">20&deg;</span></label>
         <input type="range" id="widthSlider" min="0" max="180" value="20">
       </div>
+      <div class="field">
+        <label>Power per emitter</label>
+        <div class="row"><input type="number" id="outerPowerInput" value="100" min="0" max="100000" step="1"><span class="unit">mW</span></div>
+      </div>
+      <div id="outerPowerLabel" style="font-size:0.6875rem;color:#667;margin-bottom:0.5rem;">7 &times; 100 mW = 700 mW</div>
     </div>
   </div>
 
@@ -485,6 +501,7 @@ window.toggleSection = function(id, hdr) {
   var beamAngleDeg = 30, diffuserAngle = 20, centerDiffuserAngle = 40, beamIntensity = 1.0;
   var outerCount = 7;
   var midBeamCount = 7, midBeamAngleDeg = 15, midDiffuserAngle = 20;
+  var centerPowerMW = 100, midPowerMW = 100, outerPowerMW = 100;
   var MID_RING_FRAC = 0.55; // middle ring at 55% of outer ring radius
   var centerBeamColor = 0x3388dd;
   function outerBeamColor(i) {
@@ -1384,6 +1401,136 @@ window.toggleSection = function(id, hdr) {
   }
 
   // Draw diagonal tiled copyright watermark across the full canvas
+  function updatePowerLabels() {
+    document.getElementById('centerPowerLabel').innerHTML = '1 &times; ' + centerPowerMW + ' mW = ' + centerPowerMW + ' mW';
+    var midTotal = midBeamCount * midPowerMW;
+    document.getElementById('midPowerLabel').innerHTML = midBeamCount + ' &times; ' + midPowerMW + ' mW = ' + midTotal + ' mW';
+    var outerTotal = outerCount * outerPowerMW;
+    document.getElementById('outerPowerLabel').innerHTML = outerCount + ' &times; ' + outerPowerMW + ' mW = ' + outerTotal + ' mW';
+  }
+
+  function buildZemaxExport() {
+    var toMM = 1000;
+    var roomH_mm = roomH * toMM;
+    var roomW_mm = roomW * toMM;
+    var roomD_mm = roomD * toMM;
+    var planeY_mm = planeZ * toMM;
+    var polyN = Math.max(3, outerCount > 0 ? outerCount : 32);
+    var outerR_mm = BODY_RADIUS * Math.cos(Math.PI / polyN) * toMM;
+    var midR_mm = outerR_mm * MID_RING_FRAC;
+    var deg = 180 / Math.PI;
+    var rad = Math.PI / 180;
+
+    function beamTilts(theta_deg, az_rad) {
+      var theta = theta_deg * rad;
+      var dz = Math.sin(theta) * Math.sin(az_rad);
+      var dx = Math.sin(theta) * Math.cos(az_rad);
+      var dy = -Math.cos(theta);
+      var tiltX = Math.acos(Math.max(-1, Math.min(1, dz))) * deg;
+      var tiltZ = Math.atan2(dx, -dy) * deg;
+      return { tiltX: tiltX, tiltZ: tiltZ };
+    }
+
+    var L = [];
+    var obj = 0;
+    var dt = new Date().toISOString().slice(0, 10);
+    var nObj = 1 + outerCount + midBeamCount + 1;
+
+    function addSrc(comment, x, y, z, tiltX, tiltZ, semiDeg, powMW) {
+      obj++;
+      var powW = (powMW / 1000).toFixed(6);
+      L.push('OBDC ' + obj);
+      L.push('  OBTP ' + obj + ' 1 0 "Source Cone"');
+      L.push('  COMM ' + obj + ' ' + comment);
+      L.push('  XDAT ' + obj + ' 0 ' + x.toFixed(4) + ' ' + y.toFixed(4) + ' ' + z.toFixed(4) +
+             ' ' + tiltX.toFixed(4) + ' 0.0000 ' + tiltZ.toFixed(4));
+      L.push('  OPAR ' + obj + ' 0 100 1000000 ' + powW + ' 0.85000 0 0 ' + semiDeg.toFixed(4) +
+             ' 0 0 0 0 0 0 0');
+      L.push('  FLAP ' + obj + ' 0 0');
+      L.push('  BBUF ' + obj + ' 0');
+      L.push('  ENDB ' + obj);
+      L.push('');
+    }
+
+    L.push('! ================================================================');
+    L.push('! WiRays\u00AE Coverage Estimator \u2014 Zemax OpticStudio NSC Export');
+    L.push('! Generated: ' + dt);
+    L.push('! Room: X=' + roomW + 'm  Depth=' + roomD + 'm  Height=' + roomH + 'm');
+    L.push('! Plane of Interest Z\': ' + planeZ + 'm');
+    L.push('! Wavelength: 0.850 \u03BCm (NIR default \u2014 adjust as needed)');
+    L.push('!');
+    L.push('! COORDINATE SYSTEM (Zemax NSC):');
+    L.push('!   Zemax X = WiRays X (width)');
+    L.push('!   Zemax Y = WiRays Z (height, +Y = up)');
+    L.push('!   Zemax Z = WiRays Y (depth)');
+    L.push('!   All units: mm');
+    L.push('!');
+    L.push('! HOW TO USE: File > Open in OpticStudio (Non-Sequential mode).');
+    L.push('! Run NSC ray trace: Analysis > Non-Sequential > Ray Trace');
+    L.push('! ================================================================');
+    L.push('');
+    L.push('VERS 22.2 0 0');
+    L.push('MODE NSC');
+    L.push('UNIT MM X W');
+    L.push('NCOM 0');
+    L.push('FTYP 0 0 3 0 0 0 0');
+    L.push('WAVE 1');
+    L.push('WLWT 0.85000 1.00000');
+    L.push('GFAC 0 0');
+    L.push('NSCD 100 1000000 5 1E-006 5 1E-006 0 1E+014 1 0 1 0');
+    L.push('COFN QF "COATING.DAT" "SCATTER_PROFILE.DAT" "ABG_DATA.DAT" "PROFILE.GRD"');
+    L.push('SURF 0');
+    L.push('  TYPE STANDARD');
+    L.push('  CURV 0.0');
+    L.push('  DISZ INFINITY');
+    L.push('  HIDE 0 0 0 0 0 0 0 0 0 0');
+    L.push('  MIRR 2 0');
+    L.push('  STPS 0 0 0 0 0 0 0 0 0');
+    L.push('SURF 1');
+    L.push('  TYPE NSCCOMPONENT');
+    L.push('  CURV 0.0');
+    L.push('  DISZ 0.0');
+    L.push('  HIDE 0 0 0 0 0 0 0 0 0 0');
+    L.push('  MIRR 2 0');
+    L.push('  STPS 0 0 0 0 0 0 0 0 0');
+    L.push('');
+    L.push('NSCE ' + nObj);
+    L.push('');
+
+    var ct = beamTilts(0, 0);
+    addSrc('Center Beam (vertical)', 0, roomH_mm, 0, ct.tiltX, ct.tiltZ,
+           centerDiffuserAngle / 2, centerPowerMW);
+
+    for (var i = 0; i < outerCount; i++) {
+      var az = (i / outerCount) * 2 * Math.PI;
+      var t = beamTilts(beamAngleDeg, az);
+      addSrc('Outer Beam ' + (i + 1) + ' az=' + (az * deg).toFixed(1) + 'deg',
+             Math.cos(az) * outerR_mm, roomH_mm, Math.sin(az) * outerR_mm,
+             t.tiltX, t.tiltZ, diffuserAngle / 2, outerPowerMW);
+    }
+
+    for (var j = 0; j < midBeamCount; j++) {
+      var maz = (j / midBeamCount) * 2 * Math.PI;
+      var mt = beamTilts(midBeamAngleDeg, maz);
+      addSrc('Middle Beam ' + (j + 1) + ' az=' + (maz * deg).toFixed(1) + 'deg',
+             Math.cos(maz) * midR_mm, roomH_mm, Math.sin(maz) * midR_mm,
+             mt.tiltX, mt.tiltZ, midDiffuserAngle / 2, midPowerMW);
+    }
+
+    obj++;
+    L.push('OBDC ' + obj);
+    L.push('  OBTP ' + obj + ' 1 0 "Detector Rectangle"');
+    L.push('  COMM ' + obj + ' Z-prime plane (' + planeZ + ' m)');
+    L.push('  XDAT ' + obj + ' 0 0.0000 ' + planeY_mm.toFixed(4) + ' 0.0000 0.0000 0.0000 0.0000');
+    L.push('  OPAR ' + obj + ' 0 ' + (roomW_mm / 2).toFixed(3) + ' ' + (roomD_mm / 2).toFixed(3) +
+           ' 200 200 0 0 0 0 0 0 0 0 0 0');
+    L.push('  FLAP ' + obj + ' 0 0');
+    L.push('  BBUF ' + obj + ' 0');
+    L.push('  ENDB ' + obj);
+
+    return L.join('\n');
+  }
+
   function drawWatermark(ctx, W, H) {
     var txt = '\u00A9 2026 Lumeova';
     ctx.save();
@@ -1642,6 +1789,7 @@ window.toggleSection = function(id, hdr) {
     midBeamCount = +this.value;
     document.getElementById('midCountVal').textContent = midBeamCount;
     rebuildScene();
+    updatePowerLabels();
   });
   document.getElementById('midAngleSlider').addEventListener('input', function() {
     midBeamAngleDeg = +this.value;
@@ -1667,6 +1815,19 @@ window.toggleSection = function(id, hdr) {
     outerCount = +outerCountSlider.value;
     outerCountVal.textContent = outerCount;
     rebuildScene();
+    updatePowerLabels();
+  });
+  document.getElementById('centerPowerInput').addEventListener('input', function() {
+    centerPowerMW = Math.max(0, +this.value || 0);
+    updatePowerLabels();
+  });
+  document.getElementById('midPowerInput').addEventListener('input', function() {
+    midPowerMW = Math.max(0, +this.value || 0);
+    updatePowerLabels();
+  });
+  document.getElementById('outerPowerInput').addEventListener('input', function() {
+    outerPowerMW = Math.max(0, +this.value || 0);
+    updatePowerLabels();
   });
   intensitySlider.addEventListener('input', function() {
     beamIntensity = +intensitySlider.value / 100;
@@ -2016,10 +2177,16 @@ window.toggleSection = function(id, hdr) {
           }
         }
         // Center beam
-        if (d.centerBeam && d.centerBeam.diffuserAngle != null) {
-          centerDiffuserAngle = Math.max(0, Math.min(180, +d.centerBeam.diffuserAngle));
-          document.getElementById('centerWidthSlider').value = centerDiffuserAngle;
-          document.getElementById('centerWidthVal').textContent = centerDiffuserAngle + '\u00B0';
+        if (d.centerBeam) {
+          if (d.centerBeam.diffuserAngle != null) {
+            centerDiffuserAngle = Math.max(0, Math.min(180, +d.centerBeam.diffuserAngle));
+            document.getElementById('centerWidthSlider').value = centerDiffuserAngle;
+            document.getElementById('centerWidthVal').textContent = centerDiffuserAngle + '\u00B0';
+          }
+          if (d.centerBeam.powerMW != null) {
+            centerPowerMW = Math.max(0, +d.centerBeam.powerMW);
+            document.getElementById('centerPowerInput').value = centerPowerMW;
+          }
         }
         // Middle beams
         if (d.middleBeams) {
@@ -2037,6 +2204,10 @@ window.toggleSection = function(id, hdr) {
             midDiffuserAngle = Math.max(0, Math.min(180, +d.middleBeams.diffuserAngle));
             document.getElementById('midWidthSlider').value = midDiffuserAngle;
             document.getElementById('midWidthVal').textContent = midDiffuserAngle + '\u00B0';
+          }
+          if (d.middleBeams.powerMW != null) {
+            midPowerMW = Math.max(0, +d.middleBeams.powerMW);
+            document.getElementById('midPowerInput').value = midPowerMW;
           }
         }
         // Outer beams
@@ -2056,7 +2227,12 @@ window.toggleSection = function(id, hdr) {
             document.getElementById('widthSlider').value = diffuserAngle;
             document.getElementById('widthVal').textContent = diffuserAngle + '\u00B0';
           }
+          if (d.outerBeams.powerMW != null) {
+            outerPowerMW = Math.max(0, +d.outerBeams.powerMW);
+            document.getElementById('outerPowerInput').value = outerPowerMW;
+          }
         }
+        updatePowerLabels();
         // Scene
         if (d.scene) {
           if (d.scene.beamIntensityPct != null) {
@@ -2131,9 +2307,9 @@ window.toggleSection = function(id, hdr) {
       var data = {
         room: { widthX: roomW, heightZ: roomH, depthY: roomD },
         planeOfInterest: { z: planeZ, enabled: usePlaneZ },
-        centerBeam: { diffuserAngle: centerDiffuserAngle },
-        middleBeams: { count: midBeamCount, angle: midBeamAngleDeg, diffuserAngle: midDiffuserAngle },
-        outerBeams: { count: outerCount, angle: beamAngleDeg, diffuserAngle: diffuserAngle },
+        centerBeam: { diffuserAngle: centerDiffuserAngle, powerMW: centerPowerMW },
+        middleBeams: { count: midBeamCount, angle: midBeamAngleDeg, diffuserAngle: midDiffuserAngle, powerMW: midPowerMW },
+        outerBeams: { count: outerCount, angle: beamAngleDeg, diffuserAngle: diffuserAngle, powerMW: outerPowerMW },
         scene: {
           beamIntensityPct: Math.round(beamIntensity * 100),
           gridIntensityPct: Math.round(gridIntensity * 100),
@@ -2143,6 +2319,10 @@ window.toggleSection = function(id, hdr) {
         coverage: { m2: +coverageM2.toFixed(3), pct: +Math.min(coveragePct, 100).toFixed(2) }
       };
       saveAs('beamvisual_settings.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    }
+
+    if (document.getElementById('expZemax').checked) {
+      saveAs('wirays_nsc.zmx', new Blob([buildZemaxExport()], { type: 'text/plain' }));
     }
 
     document.getElementById('exportDropdown').classList.remove('open');
