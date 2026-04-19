@@ -89,8 +89,9 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 
 ### Settings Drawer
 - Floating hamburger button (bottom-right) opens a slide-in panel from the left
-- Room dimensions (X width, Y depth, Z height) — range 0–40 m
-- Beam group parameters (center / middle / outer): count, tilt angle, diffuser angle
+- Room dimensions (X width, Y depth, Z height) — no upper cap
+- Beam group parameters (center / middle / outer): count, tilt angle, diffuser angle, power per emitter (mW)
+- Total group power label updates live: `N × P mW = total mW`
 - Plane of Interest (Z') slider
 - Scene intensity sliders (beam, grid, Z' plane)
 
@@ -112,6 +113,7 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 
 ### Export
 - 3D PNG, 2D PNG, Settings JSON — via share sheet (`@capacitor/share`)
+- Zemax NSC (.zmx) — OpticStudio Non-Sequential source + detector file
 - Cross-browser save-as modal for desktop/Mac
 
 ## Development Notes
@@ -120,5 +122,8 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 - CSS uses `rem` units throughout; root `font-size` scaled by `applyZoom()` for ⌘+/- support
 - `touch-action: none` on `input[type=range]` prevents iOS from intercepting slider drags as scrolls
 - `renderer.preserveDrawingBuffer = true` required for 3D PNG export
-- Room dimension inputs accept 0 as minimum (JS fallback handles NaN/empty only)
+- Room dimension inputs accept 0 as minimum, no upper cap — JS fallback handles NaN/empty only
 - `drawWatermark(ctx, W, H)` renders tiled copyright text; `get3DWithWatermark()` composites for export
+- `updatePowerLabels()` keeps `N × P mW` labels live as count/power change
+- `buildZemaxExport()` generates Zemax NSC `.zmx`; Euler angles derived from beam direction vector
+- `touch-action: none` on sliders prevents iOS scroll interference during drag
