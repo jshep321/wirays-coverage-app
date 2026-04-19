@@ -90,10 +90,16 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 ### Settings Drawer
 - Floating hamburger button (bottom-right) opens a slide-in panel from the left
 - Room dimensions (X width, Y depth, Z height) — no upper cap
-- Beam group parameters (center / middle / outer): count, tilt angle, diffuser angle, power per emitter (mW)
-- Total group power label updates live: `N × P mW = total mW`
+- Beam group parameters (center / middle / outer): count, tilt angle, diffuser angle
 - Plane of Interest (Z') slider
 - Scene intensity sliders (beam, grid, Z' plane)
+
+### ··· Menu (top-right)
+- **Import**: load a previously saved JSON settings file
+- **Export**: 3D PNG, 2D PNG, Settings JSON — via share sheet (`@capacitor/share`)
+- **Advanced Mode** toggle (default off, persists via `localStorage`):
+  - Reveals per-emitter power (mW) fields in the settings drawer
+  - Reveals Zemax Script (.py) export option
 
 ### Zoom (Mac / iPad)
 - **⌘+** / **⌘-** — zoom in/out in 10% steps
@@ -110,11 +116,6 @@ bg.convert('RGB').save('AppIcon-512@2x.png')
 - Tap anywhere on the 2D canvas to place a measurement point
 - Shows H (horizontal), V (vertical), S (slant), θ (elevation angle)
 - Right-triangle diagram in measure box; triangle overlay in 3D view
-
-### Export
-- 3D PNG, 2D PNG, Settings JSON — via share sheet (`@capacitor/share`)
-- Zemax Script (.py) — Python ZOS-API script to build an NSC system in OpticStudio (Source Cone objects + Detector Rectangle)
-- Cross-browser save-as modal for desktop/Mac
 
 ## Development Notes
 
